@@ -140,8 +140,8 @@ once.
 - **Language: <name>** is covered under "Game language" below.
 - **Restore Starter Decks** appears only while you have a starter deck hidden.
 
-**Tracker Options** turns the three match overlays on and off: Countdown, Deck Tracker and Attack Counter. A change
-applies at once.
+**Tracker Options** turns the match overlays on and off: Countdown, Deck Tracker and Attack Counter in one column, the
+deck tracker's Card Art, Deck Stats and Mulligan Guide in the other. A change applies at once.
 
 The settings are saved in `BepInEx\config\solostone.plugin.cfg` in the copy.
 
@@ -175,7 +175,7 @@ Three overlays show during a match:
 
 - **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
   counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
-  On by default.
+  Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. On by default.
 - **Attack Counter** shows beside each hero how much damage that side's characters can still attack for this turn,
   or could on its next turn. Off by default.
 - **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
@@ -183,6 +183,25 @@ Three overlays show during a match:
 
 The T key hides and shows all three during a match. To turn one off, use **Tracker Options** in Options.
 `DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.
+
+### Deck stats
+
+Each finished match saves, in your profile, which of your cards you were offered and kept in the mulligan, your hand
+after it, and which cards you drew and played, along with the opponent's class. Matches from before this version
+count toward a deck's wins and losses but not toward its card win rates.
+
+With **Deck Stats** on, the deck tracker shows the deck's record under its name, such as "12–7 · 63%   vs Mage 3–1"
+for the class you're facing. Press S during a match to add three win rate columns to each card:
+
+- **Mulligan**: games where the card was in your hand after the mulligan.
+- **Drawn**: games where you drew it at any point, your opening hand included.
+- **Played**: games where you played it.
+
+A game counts once per card, however many copies you drew or played. Rates are green above 50% and red below. A dash
+means no games yet. `DeckStatsKey` under `[Display]` changes the S key.
+
+With **Mulligan Guide** on, each card offered in the mulligan gets a box under it: how many times you kept it out of the
+times it was offered, and your win rate with it in your opening hand.
 
 ## What SoloStone leaves alone
 

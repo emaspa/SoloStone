@@ -12,9 +12,11 @@ internal static class OptionsPanelText
     internal const string SoloStoneButtonId = "options.solostone", TrackerButtonId = "options.tracker";
     internal const string SoloStoneButtonObject = "SoloStoneOptionsButton", TrackerButtonObject = "SoloStoneTrackerOptionsButton";
     internal const string HandheldId = "options.handheld", CountdownId = "options.countdown", DeckTrackerId = "options.deck-tracker",
-        AttackCounterId = "options.attack-counter";
+        AttackCounterId = "options.attack-counter", CardArtId = "options.card-art", DeckStatsId = "options.deck-stats",
+        MulliganGuideId = "options.mulligan-guide";
     // The countdown only runs while the Turn Timer does (NativeTurnClock), so its label says so.
     internal const string CountdownLabel = "Countdown\n(with Turn Timer)", DeckTrackerLabel = "Deck Tracker", AttackCounterLabel = "Attack Counter";
+    internal const string CardArtLabel = "Card Art", DeckStatsLabel = "Deck Stats", MulliganGuideLabel = "Mulligan Guide";
     internal static string ButtonId(string panel) => panel == SoloStoneKey ? SoloStoneButtonId : TrackerButtonId;
     internal static string BackId(string panel) => ButtonId(panel) + ".back";
     internal static string DoneId(string panel) => ButtonId(panel) + ".done";

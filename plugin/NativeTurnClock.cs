@@ -79,7 +79,7 @@ internal static class NativeTurnClock
         try
         {
             int height = Screen.height;
-            float row = height * NativeMatchTracker.RowShare * 1.25f;
+            float row = height * NativeMatchTracker.TextShare * 1.25f;
             int size = Mathf.Max(8, Mathf.RoundToInt(row * .8f));
             if (digits == null || styleSize != size) { digits = Label(size, Calm); styleSize = size; }
             panel = panel ?? Solid(NativeMatchTracker.PanelColor);

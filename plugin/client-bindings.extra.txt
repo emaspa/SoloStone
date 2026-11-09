@@ -10,6 +10,9 @@ site BlockingDiagnostics.Read | Field | (unknown type) # diagnostic: only logs, 
 site BlockingDiagnostics.Read | Method | (unknown type) # diagnostic: only logs, a missing member degrades to null
 site BlockingDiagnostics.Read | Property | (unknown type) # diagnostic: only logs, a missing member degrades to null
 
+# CardArt.Tick
+site CardArt.Tick | Property | (unknown type) # AssetHandle<T>.Asset, read by reflection on the handle CardDef's portrait getters return (the plugin does not reference Blizzard.T5.AssetManager); a miss turns the tracker's card art off for the session
+
 # ClientBridge.HumanChoicePresentation
 row F ChoiceCardMgr m_friendlyChoicesShown # BlockingDiagnostics.Get on a typed ChoiceCardMgr: whether the friendly choice cards are shown
 site ClientBridge.HumanChoicePresentation | Property | ChoiceCardMgr.m_friendlyChoicesShown (not on this type) # row above; a miss reads as shown

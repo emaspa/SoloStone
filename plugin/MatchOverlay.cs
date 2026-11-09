@@ -4,7 +4,8 @@ using BepInEx.Logging;
 using UnityEngine;
 
 // What the in-match IMGUI overlays share (NativeMatchTracker's deck tracker and attack counters, NativeTurnClock's turn
-// countdown): their settings, the toggle key that hides them all, when a match is on screen, and the drawing helpers.
+// countdown): their settings, the toggle key that hides them all, the deck tracker's stats key, when a match is on screen, and the
+// drawing helpers.
 internal static class MatchOverlay
 {
     private static ManualLogSource log;
@@ -12,6 +13,8 @@ internal static class MatchOverlay
     internal static MatchTrackerSettings Settings { get; private set; }
     // Flipped by the toggle key. It outlasts the match: hidden overlays stay hidden in the next one.
     internal static bool Hidden { get; private set; }
+    // Flipped by the stats key: the deck tracker's card win rate columns. Outlasts the match like Hidden.
+    internal static bool StatsShown { get; private set; }
 
     internal static void Initialize(ManualLogSource logger, ConfigFile file) { log = logger; Settings = new MatchTrackerSettings(file); }
 
@@ -24,6 +27,7 @@ internal static class MatchOverlay
             if (!Settings.DeckTracker && !Settings.AttackCounter && !Settings.TurnCountdown) return;
             if (ClientBridge.CurrentMatch?.Game == null || !InMatch()) return;
             if (InputCollection.GetKeyUp(Settings.Toggle)) Hidden = !Hidden;
+            if (Settings.DeckTracker && Settings.DeckStats && InputCollection.GetKeyUp(Settings.StatsKey)) StatsShown = !StatsShown;
         }
         catch (Exception error) { toggleFailed = true; log?.LogWarning("MATCH_OVERLAY toggle key disabled for the session: " + error); }
     }
@@ -57,6 +61,30 @@ internal static class MatchOverlay
         float width = Mathf.Min(size.x, area.width);
         float x = align == Align.Left ? area.x : align == Align.Right ? area.xMax - width : area.x + (area.width - width) / 2f;
         GUI.Label(new Rect(x, area.y + (area.height - size.y) / 2f, width, size.y), content, style);
+    }
+
+    // Text with a dark copy one step down and right under it, for text over card art. The client's IMGUI has no textColor getter,
+    // so the caller passes the style's colour.
+    internal static void Shadowed(Rect area, string text, GUIStyle style, Align align, Color color)
+    {
+        float step = Mathf.Max(1f, style.fontSize / 14f);
+        style.normal.textColor = new Color(0f, 0f, 0f, color.a * .9f);
+        Text(new Rect(area.x + step, area.y + step, area.width, area.height), text, style, align);
+        style.normal.textColor = color;
+        Text(area, text, style, align);
+    }
+
+    // Part of a texture (uv: its share of the texture, from the bottom left) stretched over an area. The client's IMGUI keeps no
+    // DrawTextureWithTexCoords, so the whole texture is drawn, scaled and shifted, inside a group that clips it to the area.
+    private static readonly GUIContent noContent = new GUIContent();
+    private static GUIStyle clip;
+    internal static void DrawPart(Rect area, Texture texture, Rect uv)
+    {
+        if (texture == null || uv.width <= 0 || uv.height <= 0 || area.width <= 0 || area.height <= 0) return;
+        float width = area.width / uv.width, height = area.height / uv.height;
+        GUI.BeginGroup(area, noContent, clip = clip ?? new GUIStyle());
+        try { GUI.DrawTexture(new Rect(-uv.x * width, -(1f - uv.y - uv.height) * height, width, height), texture, ScaleMode.StretchToFill); }
+        finally { GUI.EndGroup(); }
     }
 
     // A one-line label style from the skin's label: no wrap, no padding, clipped to its area.

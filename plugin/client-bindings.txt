@@ -106,6 +106,7 @@ C	UnityEngine.CoreModule	UnityEngine.Mesh	.ctor	System.Void()
 C	UnityEngine.CoreModule	UnityEngine.MonoBehaviour	.ctor	System.Void()
 C	UnityEngine.CoreModule	UnityEngine.Quaternion	.ctor	System.Void(System.Single,System.Single,System.Single,System.Single)
 C	UnityEngine.CoreModule	UnityEngine.Rect	.ctor	System.Void(System.Single,System.Single,System.Single,System.Single)
+C	UnityEngine.CoreModule	UnityEngine.Rect	.ctor	System.Void(UnityEngine.Vector2,UnityEngine.Vector2)
 C	UnityEngine.CoreModule	UnityEngine.RectOffset	.ctor	System.Void(System.Int32,System.Int32,System.Int32,System.Int32)
 C	UnityEngine.CoreModule	UnityEngine.Texture2D	.ctor	System.Void(System.Int32,System.Int32)
 C	UnityEngine.CoreModule	UnityEngine.Texture2D	.ctor	System.Void(System.Int32,System.Int32,UnityEngine.TextureFormat,System.Boolean)
@@ -115,6 +116,7 @@ C	UnityEngine.CoreModule	UnityEngine.WaitForSeconds	.ctor	System.Void(System.Sin
 C	UnityEngine.CoreModule	UnityEngine.WaitForSecondsRealtime	.ctor	System.Void(System.Single)
 C	UnityEngine.IMGUIModule	UnityEngine.GUIContent	.ctor	System.Void()
 C	UnityEngine.IMGUIModule	UnityEngine.GUIContent	.ctor	System.Void(System.String)
+C	UnityEngine.IMGUIModule	UnityEngine.GUIStyle	.ctor	System.Void()
 C	UnityEngine.IMGUIModule	UnityEngine.GUIStyle	.ctor	System.Void(UnityEngine.GUIStyle)
 C	blizzard.bgsclient	PegasusGame.AllOptions	.ctor	System.Void()
 C	blizzard.bgsclient	PegasusGame.ChooseEntities	.ctor	System.Void()
@@ -877,6 +879,8 @@ M	Assembly-CSharp	CardBackManager	HandleFavoriteToggle	*
 M	Assembly-CSharp	CardBackManager	SetCollectionCardBackOwned	System.Void(System.Int32)
 M	Assembly-CSharp	CardBackManager	get_TheRandomCardBackID	System.Int32()
 M	Assembly-CSharp	CardDbfRecord	get_NoteMiniGuid	System.String()
+M	Assembly-CSharp	CardDef	GetDeckCardBarPortrait	(TAG_PREMIUM)
+M	Assembly-CSharp	CardDef	GetPortraitTexture	(TAG_PREMIUM,System.Boolean,System.Boolean)
 M	Assembly-CSharp	CardEffect	GetSpell	(System.Boolean)
 M	Assembly-CSharp	CardSetDbfRecord	get_IsCoreCardSet	System.Boolean()
 M	Assembly-CSharp	CardSetDbfRecord	get_IsFeaturedCardSet	System.Boolean()
@@ -1154,9 +1158,12 @@ M	Assembly-CSharp	DeckTrayReorderableContent	StopDragToReorder	*
 M	Assembly-CSharp	DeckTrayReorderableContent	get_DraggingDeckBox	IDraggableCollectionVisual()
 M	Assembly-CSharp	DefLoader	Get	DefLoader()
 M	Assembly-CSharp	DefLoader	GetAllEntityDefs	System.Collections.Generic.Dictionary`2<System.String,EntityDef>()
+M	Assembly-CSharp	DefLoader	GetCardDef	DefLoader+DisposableCardDef(System.String)
 M	Assembly-CSharp	DefLoader	GetEntityDef	EntityDef(System.Int32,System.Boolean)
 M	Assembly-CSharp	DefLoader	GetEntityDef	EntityDef(System.String)
 M	Assembly-CSharp	DefLoader	HasLoadedEntityDefs	System.Boolean()
+M	Assembly-CSharp	DefLoader+DisposableCardDef	Dispose	System.Void()
+M	Assembly-CSharp	DefLoader+DisposableCardDef	get_CardDef	CardDef()
 M	Assembly-CSharp	DialogBase	AddHideListener	System.Void(DialogBase+HideCallback)
 M	Assembly-CSharp	DialogBase	HandleKeyboardInput	()
 M	Assembly-CSharp	DialogBase	Hide	System.Void()
@@ -2527,6 +2534,13 @@ M	UnityEngine.CoreModule	UnityEngine.Rect	get_y	System.Single()
 M	UnityEngine.CoreModule	UnityEngine.Rect	get_yMax	System.Single()
 M	UnityEngine.CoreModule	UnityEngine.Rect	get_yMin	System.Single()
 M	UnityEngine.CoreModule	UnityEngine.Rect	get_zero	UnityEngine.Rect()
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_height	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_width	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_x	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_xMax	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_xMin	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Rect	set_y	System.Void(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.RenderTexture	GetTemporary	UnityEngine.RenderTexture(System.Int32,System.Int32)
 M	UnityEngine.CoreModule	UnityEngine.RenderTexture	GetTemporary	UnityEngine.RenderTexture(System.Int32,System.Int32,System.Int32,UnityEngine.RenderTextureFormat)
 M	UnityEngine.CoreModule	UnityEngine.RenderTexture	ReleaseTemporary	System.Void(UnityEngine.RenderTexture)
 M	UnityEngine.CoreModule	UnityEngine.RenderTexture	get_active	UnityEngine.RenderTexture()
@@ -2628,8 +2642,11 @@ M	UnityEngine.CoreModule	UnityEngine.Vector3	set_Item	System.Void(System.Int32,S
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_current	UnityEngine.Event()
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_mousePosition	UnityEngine.Vector2()
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_type	UnityEngine.EventType()
+M	UnityEngine.IMGUIModule	UnityEngine.GUI	BeginGroup	System.Void(UnityEngine.Rect,UnityEngine.GUIContent,UnityEngine.GUIStyle)
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	Button	System.Boolean(UnityEngine.Rect,System.String,UnityEngine.GUIStyle)
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	DrawTexture	System.Void(UnityEngine.Rect,UnityEngine.Texture)
+M	UnityEngine.IMGUIModule	UnityEngine.GUI	DrawTexture	System.Void(UnityEngine.Rect,UnityEngine.Texture,UnityEngine.ScaleMode)
+M	UnityEngine.IMGUIModule	UnityEngine.GUI	EndGroup	System.Void()
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	Label	System.Void(UnityEngine.Rect,System.String,UnityEngine.GUIStyle)
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	Label	System.Void(UnityEngine.Rect,UnityEngine.GUIContent,UnityEngine.GUIStyle)
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	TextField	System.String(UnityEngine.Rect,System.String)
@@ -2936,6 +2953,7 @@ T	Assembly-CSharp	CardBackManager
 T	Assembly-CSharp	CardBackRewardData		
 T	Assembly-CSharp	CardChangeDbfRecord		
 T	Assembly-CSharp	CardDbfRecord		
+T	Assembly-CSharp	CardDef		
 T	Assembly-CSharp	CardEffect		
 T	Assembly-CSharp	CardHeroDbfRecord		
 T	Assembly-CSharp	CardListPanel		
@@ -3012,6 +3030,7 @@ T	Assembly-CSharp	DeckTrayHeroSkinContent
 T	Assembly-CSharp	DeckTrayPetContent		
 T	Assembly-CSharp	DeckTrayReorderableContent		
 T	Assembly-CSharp	DefLoader		
+T	Assembly-CSharp	DefLoader+DisposableCardDef		
 T	Assembly-CSharp	DialogBase		
 T	Assembly-CSharp	DialogBase+HideCallback		
 T	Assembly-CSharp	DialogManager		
@@ -3462,6 +3481,7 @@ T	UnityEngine.IMGUIModule	UnityEngine.GUISkin
 T	UnityEngine.IMGUIModule	UnityEngine.GUIStyle		
 T	UnityEngine.IMGUIModule	UnityEngine.GUIStyleState		
 T	UnityEngine.IMGUIModule	UnityEngine.GUIUtility		
+T	UnityEngine.IMGUIModule	UnityEngine.ScaleMode		
 T	UnityEngine.IMGUIModule	UnityEngine.TextClipping		
 T	UnityEngine.InputLegacyModule	UnityEngine.Input		
 T	UnityEngine.PhysicsModule	UnityEngine.BoxCollider		

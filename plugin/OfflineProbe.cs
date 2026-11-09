@@ -266,6 +266,7 @@ public sealed class OfflineProbe : BaseUnityPlugin
         NativeDeckInferenceOption.Initialize(Logger, Config);
         MatchOverlay.Initialize(Logger, Config);
         NativeMatchTracker.Initialize(Logger);
+        CardArt.Initialize(Logger);
         NativeTurnClock.Initialize(Logger);
         NativeMatchTrackerOptions.Initialize(Logger);
         NativeLanguageOption.Initialize(Logger, Config);
@@ -414,6 +415,7 @@ public sealed class OfflineProbe : BaseUnityPlugin
         NativeDeckInferenceOption.Tick();
         MatchOverlay.Tick();
         NativeMatchTracker.Tick();
+        CardArt.Tick();
         NativeTurnClock.Tick();
         NativeOptionsPanels.Tick();
         stage = DeckExperience.TraceStage("deck-experience", stage);

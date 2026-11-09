@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 // Per-deck lifetime record for the deck picker (owner 2026-11-05): wins and losses of one deck across Ranked and Casual, folded from the
 // settled ledger (LocalProfileData.Matches), never stored. So there is no schema change and the count is exactly the settlements:
@@ -57,6 +58,11 @@ public sealed partial class LocalProfile
 {
     // The selected deck's record; empty for an unknown key. Reads the in-memory ledger only (no I/O, never throws on a bad key).
     public LocalDeckRecord DeckRecord(string deckKey) => LocalDeckRecord.Of(data.Matches, deckKey);
+
+    // The selected deck's stats (DeckStats) over its settled matches, from the in-memory ledger.
+    internal DeckStats DeckStatsFor(string deckKey) => string.IsNullOrEmpty(deckKey) ? DeckStats.Empty
+        : DeckStats.Of(data.Matches.Where(match => match != null && LocalDeckRecord.SameDeck(match.Deck, deckKey))
+            .Select(match => new DeckStats.Game { Result = match.Result, Cards = match.CardStats }));
 }
 
 // The picker's text (pure, no Unity): "12 W - 7 L". An unplayed deck reads "0 W - 0 L" (shown, not hidden: the label does not pop in

@@ -13,6 +13,7 @@ internal static class LocalLadder
     private static LocalMatchRecord active, result;
     private static LocalRewardFacts terminalFacts;
     private static LocalPetXpCounts terminalPetXp;
+    private static LocalMatchCardStats terminalCardStats;
     private static LocalAchievementMatchEvidence terminalAchievementEvidence;
     private static int terminalTurns;
     private static bool conceded, nativeFinished;
@@ -67,7 +68,7 @@ internal static class LocalLadder
     internal static void RetryRewardSave() { if (screen == "Result" && result == null) error = null; }
     internal static void RewardPresentationComplete()
     {
-        screen = "Menu"; active = null; result = null; terminalFacts = null; terminalPetXp = null; terminalOutcome = null;
+        screen = "Menu"; active = null; result = null; terminalFacts = null; terminalPetXp = null; terminalOutcome = null; terminalCardStats = null;
         terminalAchievementEvidence = null;
         terminalTurns = 0; conceded = false; nativeFinished = false; error = null;
         opponentLabel = null; NpcWorldRuntime.End();
@@ -88,6 +89,9 @@ internal static class LocalLadder
             if (petXpClamped)
                 try { diagnostic?.Invoke("WARNING LOCAL_PET_XP_CLAMPED match=" + active.Id + " small=" + match.PetXpCounts.Small
                     + " medium=" + match.PetXpCounts.Medium + " large=" + match.PetXpCounts.Large + " (pet XP never blocks settlement)"); } catch { }
+            // The deck stats' record of the match: never blocks settlement (null on any failure).
+            try { terminalCardStats = match.CardStats; }
+            catch (Exception failure) { terminalCardStats = null; try { diagnostic?.Invoke("WARNING DECK_STATS not recorded: " + failure.Message); } catch { } }
             terminalFacts = new LocalRewardFacts {
                 DistinctCardsPlayed = facts.DistinctCardsPlayed,
                 EnemyMinionsDefeated = facts.EnemyMinionsDefeated,
@@ -115,7 +119,7 @@ internal static class LocalLadder
                             + " (no achievements this match): " + terminalAchievementEvidence.InvalidReason); } catch { }
                 }
                 result = profile.Settle(active.Id, terminalOutcome, terminalTurns, conceded, terminalFacts, active.NpcRating,
-                    npcConceded, terminalAchievementEvidence, terminalPetXp);
+                    npcConceded, terminalAchievementEvidence, terminalPetXp, terminalCardStats);
             }
             catch (Exception failure) { error = "Result could not be saved: " + failure.Message; try { diagnostic?.Invoke("LOCAL_SETTLEMENT_FAILED " + failure.GetType().Name + "\n" + failure.StackTrace); } catch { } }
         }
@@ -254,6 +258,7 @@ internal static class LocalLadder
                 result = null;
                 terminalFacts = null;
                 terminalPetXp = null;
+                terminalCardStats = null;
                 terminalAchievementEvidence = null;
                 terminalOutcome = null;
                 conceded = false;

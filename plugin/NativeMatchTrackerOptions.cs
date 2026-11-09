@@ -2,9 +2,10 @@ using System;
 using BepInEx.Logging;
 using UnityEngine;
 
-// Options > Tracker Options: checkboxes for the match overlays (MatchOverlay), Countdown, Deck Tracker and Attack Counter
-// (NativeOptionsPanels builds the rows and hands each to Attach). Each applies at once and persists in the BepInEx config ([Display]
-// TurnCountdown, DeckTracker, AttackCounter). The countdown only runs while the Turn Timer does, and its label says so
+// Options > Tracker Options: checkboxes for the match overlays (MatchOverlay): Countdown, Deck Tracker and Attack Counter in the
+// left column, and the deck tracker's Card Art, Deck Stats and Mulligan Guide in the right one (NativeOptionsPanels builds the rows
+// and hands each to Attach). Each applies at once and persists in the BepInEx config ([Display] TurnCountdown, DeckTracker,
+// AttackCounter, CardArt, DeckStats, MulliganGuide). The countdown only runs while the Turn Timer does, and its label says so
 // (OptionsPanelText.CountdownLabel). Every path fails closed: a failed save logs one warning and the box shows the saved value.
 internal static class NativeMatchTrackerOptions
 {
@@ -27,10 +28,14 @@ internal static class NativeMatchTrackerOptions
             new Row { Key = "TurnCountdown", Get = () => settings.TurnCountdown, Set = value => settings.TurnCountdown = value },
             new Row { Key = "DeckTracker", Get = () => settings.DeckTracker, Set = value => settings.DeckTracker = value },
             new Row { Key = "AttackCounter", Get = () => settings.AttackCounter, Set = value => settings.AttackCounter = value },
+            new Row { Key = "CardArt", Get = () => settings.CardArt, Set = value => settings.CardArt = value },
+            new Row { Key = "DeckStats", Get = () => settings.DeckStats, Set = value => settings.DeckStats = value },
+            new Row { Key = "MulliganGuide", Get = () => settings.MulliganGuide, Set = value => settings.MulliganGuide = value },
         };
     }
 
-    // The panel's row for setting `index` (0 Countdown, 1 Deck Tracker, 2 Attack Counter), built once; it stays for the session.
+    // The panel's row for setting `index` (0 Countdown, 1 Deck Tracker, 2 Attack Counter, 3 Card Art, 4 Deck Stats, 5 Mulligan Guide),
+    // built once; it stays for the session.
     internal static void Attach(int index, CheckBox box)
     {
         if (rows == null || MatchOverlay.Settings == null) throw new InvalidOperationException("match tracker settings unavailable");

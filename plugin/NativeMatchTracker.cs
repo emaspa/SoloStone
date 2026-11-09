@@ -5,13 +5,16 @@ using BepInEx.Logging;
 using UnityEngine;
 using static MatchOverlay;
 
-// The match tracker, two IMGUI overlays during a match. The deck tracker: one panel down the right edge, under the brand label,
-// listing the cards still in the player's deck (DeckTrackerRows). It reads only what the player has seen: OwnDeckLedger's
-// observations of the player's own side. The attack counters (off by default): a number beside each hero (AttackCounter),
-// from the public board. Both refresh only when the native board has settled (ClientBridge.BoardSettled), so a draw never
-// leaves the list, and an attack never changes a counter, before its animation shows it. Before the first refresh the deck
-// tracker shows the chosen decklist. Neither takes input or changes game state; the toggle key (MatchOverlay) only hides
-// them. Every path fails closed: an error disables both for the session with one warning.
+// The match tracker, IMGUI overlays during a match. The deck tracker: one panel down the right edge, under the brand label,
+// listing the cards still in the player's deck (DeckTrackerRows), each row over the card's art from the game's own deck lists
+// (CardArt). It reads only what the player has seen: OwnDeckLedger's observations of the player's own side. With Deck Stats on,
+// the deck's record from the profile sits under the title, and the stats key adds each card's win rates (DeckStats); during the
+// mulligan the mulligan guide shows under each offered card how often it was kept and the win rate with it in the opening hand.
+// The attack counters (off by default): a number beside each hero (AttackCounter), from the public board. The list and the
+// counters refresh only when the native board has settled (ClientBridge.BoardSettled), so a draw never leaves the list, and an
+// attack never changes a counter, before its animation shows it. Before the first refresh the deck tracker shows the chosen
+// decklist. None takes input or changes game state; the toggle key (MatchOverlay) only hides them. Every path fails closed: an
+// error disables them for the session with one warning.
 internal static class NativeMatchTracker
 {
     private static MatchTrackerSettings settings;
@@ -21,6 +24,9 @@ internal static class NativeMatchTracker
     private static int observedHistory = -1;
     private static string lastSummary;
     private static DeckTrackerView view;
+    // The deck's stats over its earlier matches (this one is still pending), and the line under the title.
+    private static DeckStats stats;
+    private static string recordLine;
     // The attack counters: friendly and opposing, and where each hero is on screen (GUI coordinates, empty when unknown).
     private static int friendlyAttack = -1, opposingAttack = -1;
     private static Rect friendlyHero, opposingHero;
@@ -45,6 +51,7 @@ internal static class NativeMatchTracker
                 Forget(); tracked = match;
                 deckName = string.IsNullOrWhiteSpace(match.PlayerDeckName) ? "Deck" : match.PlayerDeckName.Trim();
                 view = DeckTrackerRows.Decklist(game.Player1.DeckCards.Select(c => c.Id).ToList(), Describe);
+                LoadStats(game.Player2?.Hero?.Card?.Class.ToString());
             }
 #if ENGINE_SOURCE
             if (settings.AttackCounter && Time.frameCount - heroesFrame >= 30) { heroesFrame = Time.frameCount; PlaceHeroes(); }
@@ -68,9 +75,30 @@ internal static class NativeMatchTracker
         catch (Exception error) { Fail(error); }
     }
 
+    // The deck's record and card rates from the profile's settled matches. A profile that can't answer leaves the tracker without
+    // stats, not off.
+    private static void LoadStats(string opponentClass)
+    {
+        stats = null; recordLine = null;
+        try
+        {
+            var profile = LocalLadder.Profile;
+            string deck = profile?.Pending?.Deck;
+            if (profile == null || deck == null) return;
+            stats = profile.DeckStatsFor(deck);
+            string against = DeckStatsText.Against(opponentClass, stats.Against(opponentClass));
+            recordLine = DeckStatsText.Record(stats.Wins, stats.Losses) + (against == null ? "" : "   " + against);
+            log.LogInfo("DECK_STATS deck=" + deck + " record=" + stats.Wins + "-" + stats.Losses + " tracked=" + stats.TrackedGames
+                + " cards=" + stats.Cards.Count + " opponent=" + opponentClass);
+        }
+        catch (Exception error) { stats = null; recordLine = null; log.LogWarning("DECK_STATS unavailable for this match: " + error.Message); }
+    }
+
     private static void Forget()
     {
+        if (tracked != null) CardArt.Clear();
         tracked = null; view = null; observedHistory = -1; lastSummary = null; measuredView = null; drawnWidth = 0f; deckName = title = "Deck";
+        stats = null; recordLine = null;
         friendlyAttack = opposingAttack = -1; friendlyHero = opposingHero = Rect.zero; heroesFrame = -100;
 #if ENGINE_SOURCE
         ledger = null;
@@ -101,15 +129,24 @@ internal static class NativeMatchTracker
     private static void Fail(Exception error)
     {
         failed = true; view = null; friendlyAttack = opposingAttack = -1;
+        try { CardArt.Clear(); } catch (Exception) { }
         log?.LogWarning("MATCH_TRACKER disabled for the session: " + error);
     }
 
     // Drawing. Sizes are shares of the screen height, like the brand label; rows shrink to fit a long list.
-    private static GUIStyle name, number, header, note;
+    private static GUIStyle name, number, header, note, small;
     private static int styleRow;
-    private static Texture2D panel, badge, zeroBadge, attackPanel;
+    private static Texture2D panel, badge, zeroBadge, attackPanel, fade, tile, countBox;
     internal static readonly Color PanelColor = new Color(.05f, .06f, .09f, .78f);
-    internal const float RowShare = .026f, WidthRows = 8.5f, MaxWidthRows = 13f, TopShare = .075f, BottomShare = .9f, MarginShare = .012f;
+    // Rows are tiles a little taller than a line of text, so the card art reads; a long list shrinks them to fit.
+    internal const float RowShare = .034f, WidthRows = 8f, MaxWidthRows = 11.5f, TopShare = .075f, BottomShare = .9f, MarginShare = .012f;
+    // Text and the stats header are sized from this share of the screen, not from the taller tiles.
+    internal const float TextShare = .026f;
+    // Card art fills the right part of a tile, between the name's start and the count box, fading out towards the cost badge; the
+    // stats columns are this many text lines wide.
+    internal const float ArtStart = .28f, FadeShare = .5f, ColumnRows = 2.4f, StatsLine = .9f, TileGap = .08f;
+    internal static readonly Color TileColor = new Color(.08f, .09f, .12f, 1f);
+    internal static readonly string[] ColumnNames = { "Mulligan", "Drawn", "Played" };
     // The panel is as wide as its longest name needs, between WidthRows and MaxWidthRows rows; measured once per list and size.
     private static DeckTrackerView measuredView;
     private static int measuredRow;
@@ -137,61 +174,154 @@ internal static class NativeMatchTracker
         {
             if (settings.AttackCounter) { Counter(friendlyHero, friendlyAttack); Counter(opposingHero, opposingAttack); }
             if (!settings.DeckTracker || view == null) return;
+            bool statsShown = settings.DeckStats && stats != null, columns = statsShown && MatchOverlay.StatsShown;
+            if (statsShown && settings.MulliganGuide) MulliganGuide();
             int height = Screen.height, width = Screen.width;
             int lines = view.Rows.Count + (view.Unknown > 0 ? 1 : 0);
+            float extra = (statsShown ? StatsLine : 0f) + (columns ? StatsLine * 2 : 0f) + (view.UnseenRemoved > 0 ? 1f : 0f);
             float top = height * TopShare, available = height * BottomShare - top;
-            float row = Mathf.Min(height * RowShare, available / (lines + 1.6f + (view.UnseenRemoved > 0 ? 1f : 0f)));
-            Styles(Mathf.Max(8, Mathf.RoundToInt(row)));
-            float pad = row * .35f;
+            // `line` sizes text and the header lines, `row` the card tiles; a long list shrinks the tiles first, then the text.
+            float line = height * TextShare;
+            float row = Mathf.Min(height * RowShare, (available - line * (1.6f + extra)) / Mathf.Max(1, lines));
+            line = Mathf.Min(line, row);
+            if (row < height * TextShare * .75f) { row = available / (lines + 1.6f + extra); line = row; }
+            Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
+            float pad = line * .35f;
             string remaining = view.Remaining + (view.Remaining == 1 ? " card" : " cards");
             if (!ReferenceEquals(measuredView, view) || measuredRow != styleRow)
             {
                 nameWidth = view.Unknown > 0 ? Measure("Unknown card", name).x : 0f;
                 foreach (var entry in view.Rows) nameWidth = Mathf.Max(nameWidth, Measure(entry.Name, name).x);
                 // Row(): cost badge, a gap, the name, then the count column. The header: the deck's name, a gap, the card count.
-                float needed = Mathf.Max(pad * 2 + row * .86f + row * .35f + nameWidth + row * 1.6f,
-                    pad * 2 + Measure(deckName, header).x + row * .6f + Measure("30 cards", header).x);
+                float needed = Mathf.Max(pad * 2 + row * .86f + line * .35f + nameWidth + row * 1.2f,
+                    pad * 2 + Measure(deckName, header).x + line * .6f + Measure("30 cards", header).x);
                 drawnWidth = Mathf.Clamp(needed, height * RowShare * WidthRows, height * RowShare * MaxWidthRows);
-                title = Fit(deckName, drawnWidth - pad * 2 - row * .6f - Measure(remaining, header).x, header);
+                title = Fit(deckName, drawnWidth - pad * 2 - line * .6f - Measure(remaining, header).x, header);
                 measuredView = view; measuredRow = styleRow;
             }
-            float panelWidth = drawnWidth;
+            float column = line * ColumnRows, listWidth = drawnWidth - pad * 2;
+            float panelWidth = drawnWidth + (columns ? column * ColumnNames.Length : 0f);
             float x = width - height * MarginShare - panelWidth;
-            float panelHeight = pad * 2 + row * 1.3f + lines * row + (view.UnseenRemoved > 0 ? row : 0f);
+            float panelHeight = pad * 2 + line * (1.3f + extra) + lines * row;
             GUI.DrawTexture(new Rect(x, top, panelWidth, panelHeight), panel);
             float y = top + pad, inner = panelWidth - pad * 2;
-            Text(new Rect(x + pad, y, inner, row * 1.3f), title, header, Align.Left);
-            Text(new Rect(x + pad, y, inner, row * 1.3f), remaining, header, Align.Right);
-            y += row * 1.3f;
-            foreach (var entry in view.Rows) { Row(x + pad, y, inner, row, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); y += row; }
-            if (view.Unknown > 0) { Row(x + pad, y, inner, row, "?", "Unknown card", view.Unknown, false); y += row; }
+            Text(new Rect(x + pad, y, inner, line * 1.3f), title, header, Align.Left);
+            Text(new Rect(x + pad, y, inner, line * 1.3f), remaining, header, Align.Right);
+            y += line * 1.3f;
+            if (statsShown)
+            {
+                Text(new Rect(x + pad, y, inner, line * StatsLine), recordLine ?? "", small, Align.Left);
+                y += line * StatsLine;
+            }
+            float columnsX = x + pad + listWidth;
+            if (columns)
+            {
+                for (int i = 0; i < ColumnNames.Length; i++)
+                    Text(new Rect(columnsX + column * i, y, column, line * StatsLine), ColumnNames[i], small, Align.Center);
+                y += line * StatsLine;
+            }
+            foreach (var entry in view.Rows)
+            {
+                Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary);
+                if (columns) Rates(columnsX, y, column, row, stats.For(entry.Id), entry.Count > 0);
+                y += row;
+            }
+            if (view.Unknown > 0) { Row(x + pad, y, listWidth, row, null, "?", "Unknown card", view.Unknown, false); y += row; }
             if (view.UnseenRemoved > 0)
-                Text(new Rect(x + pad, y, inner, row), view.UnseenRemoved + (view.UnseenRemoved == 1 ? " card" : " cards") + " left unseen", note, Align.Left);
+            {
+                Text(new Rect(x + pad, y, inner, line), view.UnseenRemoved + (view.UnseenRemoved == 1 ? " card" : " cards") + " left unseen", note, Align.Left);
+                y += line;
+            }
+            if (columns)
+                Text(new Rect(x + pad, y, inner, line * StatsLine), stats.TrackedGames == 0 ? "Win rates start with your next game"
+                    : "Win rates over " + stats.TrackedGames + (stats.TrackedGames == 1 ? " game" : " games") + " (" + settings.StatsKey + " hides them)", small, Align.Left);
         }
         catch (Exception error) { Fail(error); }
+    }
+
+    // A card's three win rates (opening hand, drawn, played), each shaded red to green around 50%.
+    private static void Rates(float x, float y, float column, float row, DeckCardStat stat, bool live)
+    {
+        int[] wins = { stat?.OpeningWins ?? 0, stat?.DrawnWins ?? 0, stat?.PlayedWins ?? 0 };
+        int[] games = { stat?.OpeningGames ?? 0, stat?.DrawnGames ?? 0, stat?.PlayedGames ?? 0 };
+        for (int i = 0; i < wins.Length; i++)
+        {
+            float[] shade = DeckStatsText.Shade(wins[i], games[i]);
+            number.normal.textColor = new Color(shade[0], shade[1], shade[2], live ? 1f : .5f);
+            Text(new Rect(x + column * i, y, column, row), DeckStatsText.Rate(wins[i], games[i]), number, Align.Center);
+        }
+        number.normal.textColor = Color.white;
+    }
+
+    // Under each card offered in the mulligan: how often it was kept when offered, and the win rate with it in the opening hand.
+    private static void MulliganGuide()
+    {
+        var mulligan = MulliganManager.Get();
+        if (mulligan == null || !mulligan.IsMulliganActive()) return;
+        List<Card> cards = mulligan.GetStartingCards();
+        if (cards == null) return;
+        float line = Screen.height * TextShare;
+        Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
+        foreach (Card card in cards)
+        {
+            var actor = card?.GetActor();
+            if (actor == null || !actor.gameObject.activeInHierarchy) continue;
+            Rect rect = MatchOverlay.GuiRect(actor.GetMeshRenderer(), actor.gameObject.layer);
+            if (rect.width <= 0) continue;
+            var stat = stats.For(card.GetEntity()?.GetCardId());
+            var area = new Rect(rect.center.x - line * 3.3f, rect.yMax + line * .3f, line * 6.6f, line * 2.1f);
+            GUI.DrawTexture(area, panel);
+            string kept = stat == null || stat.OfferedGames == 0 ? "Kept: never offered" : "Kept " + stat.KeptGames + " of " + stat.OfferedGames;
+            Text(new Rect(area.x, area.y + line * .1f, area.width, line), kept, small, Align.Center);
+            int wins = stat?.OpeningWins ?? 0, games = stat?.OpeningGames ?? 0;
+            float[] shade = DeckStatsText.Shade(wins, games);
+            number.normal.textColor = new Color(shade[0], shade[1], shade[2]);
+            Text(new Rect(area.x, area.y + line, area.width, line), "Mulligan win rate " + DeckStatsText.Rate(wins, games), number, Align.Center);
+            number.normal.textColor = Color.white;
+        }
     }
 
     // A badge left of the hero portrait, level with its middle: the attack total.
     private static void Counter(Rect hero, int attack)
     {
         if (attack < 0 || hero.width <= 0) return;
-        float row = Screen.height * RowShare * 1.25f;
-        Styles(Mathf.RoundToInt(Screen.height * RowShare));
+        float row = Screen.height * TextShare * 1.25f;
+        Styles(Mathf.RoundToInt(Screen.height * TextShare));
         var area = new Rect(hero.xMin - row * 3.6f, hero.center.y - row * .6f, row * 3.2f, row * 1.2f);
         GUI.DrawTexture(area, attackPanel);
         Text(new Rect(area.x + row * .3f, area.y, area.width - row * .6f, area.height), "Attack", name, Align.Left);
         Text(new Rect(area.x + row * .3f, area.y, area.width - row * .6f, area.height), attack.ToString(), header, Align.Right);
     }
 
-    private static void Row(float x, float y, float width, float row, string cost, string text, int count, bool legendary)
+    // One card as a tile: a solid bar, the cost badge on the left, the card's art on the right fading out into the bar, the name over
+    // both, and the copies left in a box at the right end (none for a single copy).
+    private static void Row(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)
     {
-        float alpha = count > 0 ? 1f : .38f, size = row * .86f, inset = (row - size) / 2f;
+        float alpha = count > 0 ? 1f : .38f, gap = row * TileGap, top = y + gap / 2, tall = row - gap, size = tall * .82f, inset = (tall - size) / 2f;
         GUI.color = new Color(1f, 1f, 1f, alpha);
-        GUI.DrawTexture(new Rect(x, y + inset, size, size), count > 0 ? badge : zeroBadge);
-        Text(new Rect(x, y, size, row), cost, number, Align.Center);
-        name.normal.textColor = legendary ? new Color(1f, .74f, .3f) : new Color(.93f, .93f, .95f);
-        Text(new Rect(x + size + row * .35f, y, width - size - row * 1.6f, row), text, name, Align.Left);
-        if (count != 1) Text(new Rect(x, y, width, row), count == 0 ? "0" : "×" + count, number, Align.Right);
+        GUI.DrawTexture(new Rect(x, top, width, tall), tile);
+        float box = count != 1 ? tall : 0f;
+        bool art = false;
+        if (settings.CardArt && id != null && CardArt.TryGet(id, out var picture))
+        {
+            var area = new Rect(x + width * ArtStart, top, width * (1f - ArtStart) - box, tall);
+            DrawPart(area, picture.Texture, CardArt.Fit(picture, area.width, area.height));
+            GUI.DrawTexture(new Rect(area.x - 1f, area.y, area.width * FadeShare + 1f, area.height), fade);
+            art = true;
+        }
+        GUI.DrawTexture(new Rect(x + inset, top + inset, size, size), count > 0 ? badge : zeroBadge);
+        Text(new Rect(x + inset, top, size, tall), cost, number, Align.Center);
+        Color nameColor = legendary ? new Color(1f, .74f, .3f) : new Color(.95f, .95f, .97f);
+        name.normal.textColor = nameColor;
+        var nameArea = new Rect(x + inset + size + tall * .3f, top, width - inset - size - tall * .3f - box - tall * .1f, tall);
+        if (art) Shadowed(nameArea, text, name, Align.Left, nameColor); else Text(nameArea, text, name, Align.Left);
+        if (box > 0)
+        {
+            GUI.DrawTexture(new Rect(x + width - box, top, box, tall), countBox);
+            number.normal.textColor = count == 0 ? new Color(.7f, .7f, .72f) : new Color(1f, .82f, .35f);
+            Text(new Rect(x + width - box, top, box, tall), count.ToString(), number, Align.Center);
+            number.normal.textColor = Color.white;
+        }
         GUI.color = Color.white;
     }
 
@@ -202,11 +332,25 @@ internal static class NativeMatchTracker
         badge = badge ?? Solid(new Color(.16f, .36f, .72f, .95f));
         zeroBadge = zeroBadge ?? Solid(new Color(.3f, .3f, .34f, .95f));
         attackPanel = attackPanel ?? Solid(new Color(.45f, .12f, .08f, .85f));
+        fade = fade ?? Fade(TileColor);
+        tile = tile ?? Solid(TileColor);
+        countBox = countBox ?? Solid(new Color(.03f, .035f, .05f, 1f));
         GUIStyle Make(float share, Color color) => MatchOverlay.Label(Mathf.RoundToInt(row * share), color);
         name = Make(.6f, Color.white);
         number = Make(.6f, Color.white);
         header = Make(.72f, new Color(1f, 1f, 1f, .95f));
         note = Make(.52f, new Color(1f, .8f, .45f));
+        small = Make(.5f, new Color(.82f, .85f, .9f));
         styleRow = row;
+    }
+
+    // A left-to-right fade from the panel's colour to clear, laid over the left part of the card art.
+    private static Texture2D Fade(Color color)
+    {
+        const int steps = 32;
+        var texture = new Texture2D(steps, 1) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp };
+        for (int i = 0; i < steps; i++) texture.SetPixel(i, 0, new Color(color.r, color.g, color.b, 1f - (float)i / (steps - 1)));
+        texture.Apply();
+        return texture;
     }
 }

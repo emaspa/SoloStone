@@ -359,6 +359,15 @@ public sealed class NativeMatch
     private readonly EngineCard playerHero;
     private readonly List<EngineCard> playerCards;
     private readonly HashSet<string> playedCardIds = new HashSet<string>(StringComparer.Ordinal);
+#if ENGINE_SOURCE
+    // Deck stats (CardStats): the player's starting cards by entity id, and the mulligan as the player answered it.
+    private Dictionary<int, string> statsStartingCards;
+    private List<string> statsOffered, statsKept;
+    private List<int> statsOpening;
+    // The history fact count when the player answered the mulligan: the opening deal before it enters the hand too, and a card
+    // thrown back was never drawn.
+    private long statsMulliganFacts;
+#endif
     private readonly HashSet<int> enemyBoardMinions = new HashSet<int>();
     private readonly HashSet<int> defeatedEnemyMinions = new HashSet<int>();
     private readonly Dictionary<int, int> rewardControllers = new Dictionary<int, int>();
@@ -805,6 +814,10 @@ public sealed class NativeMatch
             .Where(card => card.Card.Id != "GAME_005").Select(card => card.Card.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray();
         EngineStartCards = string.Join(",", initialCards);
         EngineStartCount = initialCards.Length;
+#if ENGINE_SOURCE
+        statsStartingCards = Game.Player1.DeckZone.Concat(Game.Player1.HandZone).Where(card => card.Card.Id != "GAME_005")
+            .ToDictionary(card => card.Id, card => card.Card.Id);
+#endif
         ObserveRewardHistory(Game.PowerHistory.Last);
         SendHistory(Game.PowerHistory.Last);
 
@@ -1566,11 +1579,15 @@ public sealed class NativeMatch
                     BotAction.From(ChooseTask.Mulligan(owner, kept.ToList())).ToString(), -1, kept, false));
             }
         }
+        bool statsMulligan = owner == Game.Player1 && owner.Choice?.ChoiceType == ChoiceType.MULLIGAN && statsStartingCards != null;
+        long statsBefore = statsMulligan ? Game.HistoryFacts.RecordCount : 0;
+        List<int> statsOffer = statsMulligan ? owner.Choice.Choices.ToList() : null;
         CopyTransportBridge.Enter(this, Game);
         try
         {
             if (!Game.TryAnswer(new SabberStoneCore.Model.Decisions.DecisionAnswer(id, controller, kept), out var error))
                 throw new InvalidOperationException(error);
+            if (statsMulligan) RecordMulligan(statsOffer, kept, statsBefore);
             NoteOpposingAnswer(controller, kept);
         }
         finally { CopyTransportBridge.Exit(); }
@@ -1748,6 +1765,53 @@ public sealed class NativeMatch
         resultRecorded = true;
         matchRecorder.OnResult(Game.Player1.PlayState.ToString(), Game.Turn);
     }
+
+#if ENGINE_SOURCE
+    // The mulligan for the deck stats, right after the player's answer: what was offered and kept, and the hand it left. Both
+    // mulligans are in by then, so the first turn may already have begun: its turn-start draw is not part of the opening hand.
+    private void RecordMulligan(List<int> offered, int[] kept, long factsBefore)
+    {
+        try
+        {
+            statsMulliganFacts = factsBefore;
+            statsOffered = offered.Where(statsStartingCards.ContainsKey).Select(entity => statsStartingCards[entity]).ToList();
+            statsKept = kept.Where(statsStartingCards.ContainsKey).Select(entity => statsStartingCards[entity]).ToList();
+            var turnDraws = new HashSet<int>(Game.HistoryFacts.Records.Where(fact => fact.Sequence > factsBefore).OfType<HandEnteredFact>()
+                .Where(fact => fact.EntryKind == HistoryHandEntryKind.TurnStartDraw).Select(fact => fact.EntityId));
+            statsOpening = Game.Player1.HandZone.Select(card => card.Id).Where(entity => statsStartingCards.ContainsKey(entity) && !turnDraws.Contains(entity)).ToList();
+        }
+        catch (Exception) { statsOffered = statsKept = null; statsOpening = null; }
+    }
+
+    // The player's cards in this match, for the deck stats: read at the end from the engine's history facts, so a Rewind is
+    // already undone. Only the starting 30 count (statsStartingCards); null before the mulligan was recorded. Drawn is the opening
+    // hand plus every card that entered the hand after the mulligan answer, not the opening deal.
+    public LocalMatchCardStats CardStats
+    {
+        get
+        {
+            if (Game == null || statsStartingCards == null || statsOpening == null) return null;
+            int me = Game.Player1.Id;
+            var drawn = new HashSet<int>(statsOpening);
+            var played = new HashSet<int>();
+            foreach (var fact in Game.HistoryFacts.Records)
+            {
+                if (fact is HandEnteredFact hand && fact.Sequence > statsMulliganFacts && fact.ControllerId == me && statsStartingCards.ContainsKey(hand.EntityId))
+                    drawn.Add(hand.EntityId);
+                else if (fact is CardPlayedFact play && fact.ControllerId == me && statsStartingCards.ContainsKey(play.EntityId)) played.Add(play.EntityId);
+            }
+            List<string> Cards(IEnumerable<int> entities) => entities.Select(entity => statsStartingCards[entity]).OrderBy(card => card, StringComparer.Ordinal).ToList();
+            return new LocalMatchCardStats {
+                OpponentClass = Game.Player2?.Hero?.Card?.Class.ToString(),
+                Offered = statsOffered.OrderBy(card => card, StringComparer.Ordinal).ToList(),
+                Kept = statsKept.OrderBy(card => card, StringComparer.Ordinal).ToList(),
+                Opening = Cards(statsOpening), Drawn = Cards(drawn), Played = Cards(played)
+            };
+        }
+    }
+#else
+    public LocalMatchCardStats CardStats => null;
+#endif
 
     private void ObserveRewardHistory(IEnumerable<IPowerHistoryEntry> entries)
     {

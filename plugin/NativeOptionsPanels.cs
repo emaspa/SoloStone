@@ -401,6 +401,12 @@ internal static class NativeOptionsPanels
                     box => NativeMatchTrackerOptions.Attach(1, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 0, "attackCounter", OptionsPanelText.AttackCounterId, "SoloStoneAttackCounterCheckbox", OptionsPanelText.AttackCounterLabel,
                     box => NativeMatchTrackerOptions.Attach(2, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "cardArt", OptionsPanelText.CardArtId, "SoloStoneCardArtCheckbox", OptionsPanelText.CardArtLabel,
+                    box => NativeMatchTrackerOptions.Attach(3, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "deckStats", OptionsPanelText.DeckStatsId, "SoloStoneDeckStatsCheckbox", OptionsPanelText.DeckStatsLabel,
+                    box => NativeMatchTrackerOptions.Attach(4, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "mulliganGuide", OptionsPanelText.MulliganGuideId, "SoloStoneMulliganGuideCheckbox", OptionsPanelText.MulliganGuideLabel,
+                    box => NativeMatchTrackerOptions.Attach(5, box), NativeMatchTrackerOptions.Sync);
             }
             if (panel.Rows.Count == 0) throw new InvalidOperationException("no rows");
 
