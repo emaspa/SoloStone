@@ -24,7 +24,7 @@ internal static class MatchOverlay
         if (toggleFailed || Settings == null) return;
         try
         {
-            if (!Settings.DeckTracker && !Settings.AttackCounter && !Settings.TurnCountdown) return;
+            if (!Settings.DeckTracker && !Settings.AttackCounter && !Settings.TurnCountdown && !Settings.OpponentTracker) return;
             if (ClientBridge.CurrentMatch?.Game == null || !InMatch()) return;
             if (InputCollection.GetKeyUp(Settings.Toggle)) Hidden = !Hidden;
             if (Settings.DeckTracker && Settings.DeckStats && InputCollection.GetKeyUp(Settings.StatsKey)) StatsShown = !StatsShown;

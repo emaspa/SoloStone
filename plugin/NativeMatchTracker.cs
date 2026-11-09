@@ -27,6 +27,8 @@ internal static class NativeMatchTracker
     private static bool failed;
     private static NativeMatch tracked;
     private static int observedHistory = -1;
+    // Which trackers the last refresh filled: a tracker switched on mid-match must not wait for the next engine event.
+    private static int observedTrackers;
     private static string lastSummary;
     private static DeckTrackerView view;
     // The deck's stats over its earlier matches (this one is still pending), and the line under the title.
@@ -68,6 +70,8 @@ internal static class NativeMatchTracker
 #if ENGINE_SOURCE
             if (settings.AttackCounter && Time.frameCount - heroesFrame >= 30) { heroesFrame = Time.frameCount; PlaceHeroes(); }
             int history = game.PowerHistory?.Full?.Count ?? 0;
+            int trackers = (settings.DeckTracker ? 1 : 0) | (settings.OpponentTracker ? 2 : 0);
+            if (trackers != observedTrackers) { observedTrackers = trackers; observedHistory = -1; }
             if (history == observedHistory || !ClientBridge.BoardSettled()) return;
             bool friendlyTurn = game.CurrentPlayer == game.Player1;
             friendlyAttack = AttackCounter.For(game.Player1, friendlyTurn);
@@ -105,7 +109,7 @@ internal static class NativeMatchTracker
             foreach (var fact in game.HistoryFacts.Query.Events<SabberStoneCore.Model.HistoryCardFact>()) full[fact.Sequence] = fact;
             var fair = game.HistoryFacts.ProjectForFairView(game, game.Player1.PlayerId);
             var revealed = new Dictionary<int, string>();
-            var created = new List<string>();
+            var created = new Dictionary<int, string>(); // by entity: a created card played twice is still one card
             foreach (var fact in fair.Query.Events<SabberStoneCore.Model.HistoryCardFact>())
             {
                 if (!fact.DefinitionKnown || !full.TryGetValue(fact.Sequence, out var source)) continue;
@@ -113,9 +117,9 @@ internal static class NativeMatchTracker
                 if (card == null || card.Id == "GAME_005" || card.Type == SabberStoneCore.Enums.CardType.HERO_POWER
                     || card.Type == SabberStoneCore.Enums.CardType.ENCHANTMENT) continue;
                 if (match.OpponentStartedWith(source.EntityId)) { if (!revealed.ContainsKey(source.EntityId)) revealed[source.EntityId] = card.Id; }
-                else if (fact is SabberStoneCore.Model.CardPlayedFact && fact.ControllerId == them.Id) created.Add(card.Id);
+                else if (fact is SabberStoneCore.Model.CardPlayedFact && fact.ControllerId == them.Id && !created.ContainsKey(source.EntityId)) created[source.EntityId] = card.Id;
             }
-            opponent = OpponentTrackerRows.Build(revealed.Values, created, them.HandZone.Count, them.DeckZone.Count, Describe);
+            opponent = OpponentTrackerRows.Build(revealed.Values, created.Values, them.HandZone.Count, them.DeckZone.Count, Describe);
         }
         catch (Exception error)
         {
