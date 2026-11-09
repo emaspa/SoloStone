@@ -267,6 +267,7 @@ public sealed class OfflineProbe : BaseUnityPlugin
         MatchOverlay.Initialize(Logger, Config);
         NativeMatchTracker.Initialize(Logger);
         CardArt.Initialize(Logger);
+        NativeStatsScreen.Initialize(harmony, Logger);
         NativeTurnClock.Initialize(Logger);
         NativeMatchTrackerOptions.Initialize(Logger);
         NativeLanguageOption.Initialize(Logger, Config);
@@ -416,6 +417,7 @@ public sealed class OfflineProbe : BaseUnityPlugin
         MatchOverlay.Tick();
         NativeMatchTracker.Tick();
         CardArt.Tick();
+        NativeStatsScreen.Tick();
         NativeTurnClock.Tick();
         NativeOptionsPanels.Tick();
         stage = DeckExperience.TraceStage("deck-experience", stage);
@@ -449,7 +451,7 @@ public sealed class OfflineProbe : BaseUnityPlugin
         }
     }
 
-    private void OnGUI() { LocalLadder.Draw(); NativeBrandLabel.Draw(); NativeFpsCounter.Draw(); NativeMatchTracker.Draw(); NativeTurnClock.Draw(); }
+    private void OnGUI() { LocalLadder.Draw(); NativeBrandLabel.Draw(); NativeFpsCounter.Draw(); NativeMatchTracker.Draw(); NativeTurnClock.Draw(); NativeStatsScreen.Draw(); }
     private void OnApplicationPause(bool paused)
     {
         NativeSpellWatchdog.ApplicationPause(paused);

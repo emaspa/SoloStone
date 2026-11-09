@@ -436,6 +436,9 @@ site NativeSpellWatchdog.UpdateGeneral | Property | Spell.m_activeStateType (not
 site NativeSpellWatchdog.UpdateGeneral | Property | Spell.m_fsm (not on this type) # stall watchdog, gameplay recovery: BlockingDiagnostics.Get reads on Spell, AttackSpellController, SpellController subclasses, PowerTaskList and ZoneChangeList (rows under NativeSpellWatchdog.Recover and .UpdateGeneral). A miss makes the watchdog observe-only or fail its recovery, never crash
 site NativeSpellWatchdog.UpdateGeneral | Property | SpellController.m_sourceAttackSpell (not on this type) # stall watchdog, gameplay recovery: BlockingDiagnostics.Get reads on Spell, AttackSpellController, SpellController subclasses, PowerTaskList and ZoneChangeList (rows under NativeSpellWatchdog.Recover and .UpdateGeneral). A miss makes the watchdog observe-only or fail its recovery, never crash
 
+# NativeStatsScreen.Relabel
+site NativeStatsScreen.Relabel | Property | UnityEngine.Component.Text (not on this type) # UberText.Text on the cloned Collection slot's caption; UberText is outside references/game; a miss leaves the drawer without the Stats button
+
 # NativeTestControl.PowersText
 
 # NativeTestControl.ReadView

@@ -61,10 +61,19 @@ internal sealed class DeckStats
     {
         internal string Result;
         internal LocalMatchCardStats Cards;
+        // The opponent's class when the card stats don't say (matches from before them): from the opponent's deck.
+        internal string OpponentClass;
+        internal bool Casual;
+        internal string Opponent, Settled;
+        internal int Turns;
     }
 
+    // The most recent games kept for the stats screen, newest first.
+    internal const int RecentGames = 10;
+
     internal static readonly DeckStats Empty = new DeckStats();
-    internal int Wins, Losses;
+    internal int Wins, Losses, RankedWins, RankedLosses, CasualWins, CasualLosses;
+    internal readonly List<Game> Recent = new List<Game>();
     // Games with card stats, and their wins: the base every card rate is measured against.
     internal int TrackedGames, TrackedWins;
     internal readonly Dictionary<string, int[]> ByClass = new Dictionary<string, int[]>(StringComparer.Ordinal); // class -> {wins, losses}
@@ -81,21 +90,30 @@ internal sealed class DeckStats
             bool won = game.Result == "Won", lost = game.Result == "Lost" || game.Result == "Abandoned";
             if (!won && !lost) continue;
             if (won) stats.Wins++; else stats.Losses++;
+            if (game.Casual) { if (won) stats.CasualWins++; else stats.CasualLosses++; }
+            else { if (won) stats.RankedWins++; else stats.RankedLosses++; }
+            stats.Recent.Add(game);
             var cards = game.Cards;
+            string opponentClass = !string.IsNullOrEmpty(cards?.OpponentClass) ? cards.OpponentClass : game.OpponentClass;
+            if (!string.IsNullOrEmpty(opponentClass))
+            {
+                if (!stats.ByClass.TryGetValue(opponentClass, out int[] record)) stats.ByClass[opponentClass] = record = new int[2];
+                record[won ? 0 : 1]++;
+            }
             if (cards == null) continue;
             stats.TrackedGames++;
             if (won) stats.TrackedWins++;
-            if (!string.IsNullOrEmpty(cards.OpponentClass))
-            {
-                if (!stats.ByClass.TryGetValue(cards.OpponentClass, out int[] record)) stats.ByClass[cards.OpponentClass] = record = new int[2];
-                record[won ? 0 : 1]++;
-            }
             foreach (string id in Distinct(cards.Offered)) stats.Card(id).OfferedGames++;
             foreach (string id in Distinct(cards.Kept)) stats.Card(id).KeptGames++;
             foreach (string id in Distinct(cards.Opening)) { var card = stats.Card(id); card.OpeningGames++; if (won) card.OpeningWins++; }
             foreach (string id in Distinct(cards.Drawn)) { var card = stats.Card(id); card.DrawnGames++; if (won) card.DrawnWins++; }
             foreach (string id in Distinct(cards.Played)) { var card = stats.Card(id); card.PlayedGames++; if (won) card.PlayedWins++; }
         }
+        // Newest first: settlement times are ISO 8601, so they sort as text; the ledger's own order breaks ties.
+        var ordered = stats.Recent.Select((game, index) => new { game, index })
+            .OrderByDescending(row => row.game.Settled ?? "", StringComparer.Ordinal).ThenByDescending(row => row.index)
+            .Select(row => row.game).Take(RecentGames).ToList();
+        stats.Recent.Clear(); stats.Recent.AddRange(ordered);
         return stats;
     }
 
@@ -111,6 +129,14 @@ internal sealed class DeckStats
 
     internal int[] Against(string opponentClass) =>
         opponentClass != null && ByClass.TryGetValue(opponentClass, out int[] record) ? record : new int[2];
+}
+
+// One deck on the stats screen: what it is and how it did.
+internal sealed class DeckStatsEntry
+{
+    internal string Key, Name, Class;
+    internal IReadOnlyList<string> Cards;
+    internal DeckStats Stats;
 }
 
 // The deck stats as text (pure).
@@ -129,6 +155,14 @@ internal static class DeckStatsText
     // "vs Mage 3–1"; null without a class.
     internal static string Against(string opponentClass, int[] record) =>
         string.IsNullOrEmpty(opponentClass) || record == null ? null : "vs " + ClassName(opponentClass) + " " + Number(record[0]) + "–" + Number(record[1]);
+
+    // "Won in 9 turns vs Mage" style lines for recent games use the result word: Won, Lost, or Lost for an abandoned match.
+    internal static string Result(string result) => result == "Won" ? "Won" : "Lost";
+
+    // A settlement time as a short date ("Nov 9"); empty when it doesn't parse.
+    internal static string Day(string utc) =>
+        DateTime.TryParse(utc, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out DateTime when)
+            ? when.ToLocalTime().ToString("MMM d", CultureInfo.InvariantCulture) : "";
 
     // An engine CardClass name as the game writes it: DEMONHUNTER is "Demon Hunter".
     internal static string ClassName(string engineClass)

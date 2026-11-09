@@ -101,6 +101,7 @@ C	UnityEngine.CoreModule	UnityEngine.Color	.ctor	System.Void(System.Single,Syste
 C	UnityEngine.CoreModule	UnityEngine.Color32	.ctor	System.Void(System.Byte,System.Byte,System.Byte,System.Byte)
 C	UnityEngine.CoreModule	UnityEngine.GameObject	.ctor	System.Void(System.String)
 C	UnityEngine.CoreModule	UnityEngine.Material	.ctor	System.Void(UnityEngine.Material)
+C	UnityEngine.CoreModule	UnityEngine.Material	.ctor	System.Void(UnityEngine.Shader)
 C	UnityEngine.CoreModule	UnityEngine.MaterialPropertyBlock	.ctor	System.Void()
 C	UnityEngine.CoreModule	UnityEngine.Mesh	.ctor	System.Void()
 C	UnityEngine.CoreModule	UnityEngine.MonoBehaviour	.ctor	System.Void()
@@ -261,6 +262,8 @@ F	Assembly-CSharp	BuyProductEventArgs	PaymentCurrency	CurrencyType
 F	Assembly-CSharp	BuyProductEventArgs	PmtProductId	System.Int64
 F	Assembly-CSharp	BuyProductEventArgs	Quantity	System.Int32
 F	Assembly-CSharp	Card	m_beingDrawnByOpponent	*
+F	Assembly-CSharp	CardBack	m_CardBackMaterial	UnityEngine.Material
+F	Assembly-CSharp	CardBack	m_CardBackTexture	UnityEngine.Texture2D
 F	Assembly-CSharp	CardBackInfoManager	m_currentCardBackIdx	*
 F	Assembly-CSharp	CardBackInfoManager	m_description	*
 F	Assembly-CSharp	CardBackInfoManager	m_isStoreTransactionActive	*
@@ -872,6 +875,7 @@ M	Assembly-CSharp	CardBackInfoManager	Get	CardBackInfoManager()
 M	Assembly-CSharp	CardBackInfoManager	OnFailedPurchaseAck	(Hearthstone.Store.ProductInfo,PaymentMethod)
 M	Assembly-CSharp	CardBackManager	Get	*
 M	Assembly-CSharp	CardBackManager	Get	CardBackManager()
+M	Assembly-CSharp	CardBackManager	GetCardBackBySlot	CardBack(CardBackManager+CardBackSlot)
 M	Assembly-CSharp	CardBackManager	GetCardBackIds	System.Collections.Generic.HashSet`1<System.Int32>(System.Boolean)
 M	Assembly-CSharp	CardBackManager	GetCollectionManagerCardBackPurchaseProductId	(System.Int32)
 M	Assembly-CSharp	CardBackManager	HandleFavoriteToggle	(System.Int32)
@@ -2426,7 +2430,11 @@ M	UnityEngine.CoreModule	UnityEngine.Camera	set_nearClipPlane	System.Void(System
 M	UnityEngine.CoreModule	UnityEngine.Camera	set_orthographic	System.Void(System.Boolean)
 M	UnityEngine.CoreModule	UnityEngine.Camera	set_orthographicSize	System.Void(System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Camera	set_targetTexture	System.Void(UnityEngine.RenderTexture)
+M	UnityEngine.CoreModule	UnityEngine.Color	Lerp	UnityEngine.Color(UnityEngine.Color,UnityEngine.Color,System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Color	get_clear	UnityEngine.Color()
 M	UnityEngine.CoreModule	UnityEngine.Color	get_white	UnityEngine.Color()
+M	UnityEngine.CoreModule	UnityEngine.Color	op_Addition	UnityEngine.Color(UnityEngine.Color,UnityEngine.Color)
+M	UnityEngine.CoreModule	UnityEngine.Color	op_Multiply	UnityEngine.Color(UnityEngine.Color,System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Component	GetComponent	!!0()
 M	UnityEngine.CoreModule	UnityEngine.Component	GetComponent	UnityEngine.Component(System.Type)
 M	UnityEngine.CoreModule	UnityEngine.Component	GetComponentInChildren	!!0()
@@ -2447,6 +2455,7 @@ M	UnityEngine.CoreModule	UnityEngine.GameObject	AddComponent	!!0()
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponent	!!0()
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponent	UnityEngine.Component(System.Type)
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponentInChildren	!!0()
+M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponentInChildren	!!0(System.Boolean)
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponentInParent	!!0()
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponents	!!0[]()
 M	UnityEngine.CoreModule	UnityEngine.GameObject	GetComponentsInChildren	!!0[]()
@@ -2490,6 +2499,9 @@ M	UnityEngine.CoreModule	UnityEngine.Mesh	RecalculateBounds	System.Void()
 M	UnityEngine.CoreModule	UnityEngine.Mesh	get_bounds	UnityEngine.Bounds()
 M	UnityEngine.CoreModule	UnityEngine.Mesh	get_isReadable	System.Boolean()
 M	UnityEngine.CoreModule	UnityEngine.Mesh	get_uv	UnityEngine.Vector2[]()
+M	UnityEngine.CoreModule	UnityEngine.Mesh	set_colors	System.Void(UnityEngine.Color[])
+M	UnityEngine.CoreModule	UnityEngine.Mesh	set_triangles	System.Void(System.Int32[])
+M	UnityEngine.CoreModule	UnityEngine.Mesh	set_uv	System.Void(UnityEngine.Vector2[])
 M	UnityEngine.CoreModule	UnityEngine.Mesh	set_vertices	System.Void(UnityEngine.Vector3[])
 M	UnityEngine.CoreModule	UnityEngine.MeshFilter	get_sharedMesh	UnityEngine.Mesh()
 M	UnityEngine.CoreModule	UnityEngine.MeshFilter	set_sharedMesh	System.Void(UnityEngine.Mesh)
@@ -2559,6 +2571,7 @@ M	UnityEngine.CoreModule	UnityEngine.Renderer	set_sharedMaterial	System.Void(Uni
 M	UnityEngine.CoreModule	UnityEngine.Resources	FindObjectsOfTypeAll	!!0[]()
 M	UnityEngine.CoreModule	UnityEngine.Screen	get_height	System.Int32()
 M	UnityEngine.CoreModule	UnityEngine.Screen	get_width	System.Int32()
+M	UnityEngine.CoreModule	UnityEngine.Shader	Find	UnityEngine.Shader(System.String)
 M	UnityEngine.CoreModule	UnityEngine.Sprite	Create	UnityEngine.Sprite(UnityEngine.Texture2D,UnityEngine.Rect,UnityEngine.Vector2,System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Sprite	get_bounds	UnityEngine.Bounds()
 M	UnityEngine.CoreModule	UnityEngine.Sprite	get_rect	UnityEngine.Rect()
@@ -2574,10 +2587,12 @@ M	UnityEngine.CoreModule	UnityEngine.Texture	set_filterMode	System.Void(UnityEng
 M	UnityEngine.CoreModule	UnityEngine.Texture	set_wrapMode	System.Void(UnityEngine.TextureWrapMode)
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	Apply	System.Void()
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	Apply	System.Void(System.Boolean,System.Boolean)
+M	UnityEngine.CoreModule	UnityEngine.Texture2D	GetPixels	UnityEngine.Color[]()
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	GetPixels32	UnityEngine.Color32[]()
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	ReadPixels	System.Void(UnityEngine.Rect,System.Int32,System.Int32)
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	ReadPixels	System.Void(UnityEngine.Rect,System.Int32,System.Int32,System.Boolean)
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	SetPixel	System.Void(System.Int32,System.Int32,UnityEngine.Color)
+M	UnityEngine.CoreModule	UnityEngine.Texture2D	SetPixels	System.Void(UnityEngine.Color[])
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	SetPixels32	System.Void(UnityEngine.Color32[])
 M	UnityEngine.CoreModule	UnityEngine.Texture2D	get_whiteTexture	UnityEngine.Texture2D()
 M	UnityEngine.CoreModule	UnityEngine.Time	get_frameCount	System.Int32()
@@ -2625,6 +2640,7 @@ M	UnityEngine.CoreModule	UnityEngine.Vector3	get_Item	System.Single(System.Int32
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_down	UnityEngine.Vector3()
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_forward	UnityEngine.Vector3()
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_magnitude	System.Single()
+M	UnityEngine.CoreModule	UnityEngine.Vector3	get_normalized	UnityEngine.Vector3()
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_one	UnityEngine.Vector3()
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_right	UnityEngine.Vector3()
 M	UnityEngine.CoreModule	UnityEngine.Vector3	get_sqrMagnitude	System.Single()
@@ -2639,7 +2655,9 @@ M	UnityEngine.CoreModule	UnityEngine.Vector3	op_Multiply	UnityEngine.Vector3(Uni
 M	UnityEngine.CoreModule	UnityEngine.Vector3	op_Subtraction	UnityEngine.Vector3(UnityEngine.Vector3,UnityEngine.Vector3)
 M	UnityEngine.CoreModule	UnityEngine.Vector3	op_UnaryNegation	UnityEngine.Vector3(UnityEngine.Vector3)
 M	UnityEngine.CoreModule	UnityEngine.Vector3	set_Item	System.Void(System.Int32,System.Single)
+M	UnityEngine.IMGUIModule	UnityEngine.Event	Use	System.Void()
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_current	UnityEngine.Event()
+M	UnityEngine.IMGUIModule	UnityEngine.Event	get_delta	UnityEngine.Vector2()
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_mousePosition	UnityEngine.Vector2()
 M	UnityEngine.IMGUIModule	UnityEngine.Event	get_type	UnityEngine.EventType()
 M	UnityEngine.IMGUIModule	UnityEngine.GUI	BeginGroup	System.Void(UnityEngine.Rect,UnityEngine.GUIContent,UnityEngine.GUIStyle)
@@ -2947,9 +2965,11 @@ T	Assembly-CSharp	CameraUtils
 T	Assembly-CSharp	CanvasAnchor		
 T	Assembly-CSharp	CanvasScaleMode		
 T	Assembly-CSharp	Card		
+T	Assembly-CSharp	CardBack		
 T	Assembly-CSharp	CardBackDbfRecord		
 T	Assembly-CSharp	CardBackInfoManager		
 T	Assembly-CSharp	CardBackManager		
+T	Assembly-CSharp	CardBackManager+CardBackSlot		
 T	Assembly-CSharp	CardBackRewardData		
 T	Assembly-CSharp	CardChangeDbfRecord		
 T	Assembly-CSharp	CardDbfRecord		

@@ -203,6 +203,20 @@ means no games yet. `DeckStatsKey` under `[Display]` changes the S key.
 With **Mulligan Guide** on, each card offered in the mulligan gets a box under it: how many times you kept it out of the
 times it was offered, and your win rate with it in your opening hand.
 
+### Stats screen
+
+The **Stats** button sits after **Collection** in the main screen's bottom drawer. It lists every deck you've finished
+a match with, most played first. Pick one to see:
+
+- its record, split into Ranked and Casual;
+- its record against each opponent class;
+- each card's Mulligan, Drawn and Played win rates, which match the tracker's S columns, plus how often you kept it
+  when it was offered and how many games you played it in;
+- its last 10 games, with the opponent, the length in turns, the mode and the date.
+
+The screen reads the same match history as the tracker, so it shows data even with **Deck Stats** turned off. Press
+Close or Escape to leave.
+
 ## What SoloStone leaves alone
 
 - Your Hearthstone folder. It is only read.

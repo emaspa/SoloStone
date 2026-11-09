@@ -29,6 +29,18 @@ static partial class Program
         Check(stats.For("Z")==null && stats.For(null)==null,"an unseen card has no stats");
         Check(DeckStats.Of(null).Games==0 && DeckStats.Empty.TrackedGames==0,"no matches, no stats");
 
+        // The stats screen: modes, the class of older matches from the opponent's deck, recent games newest first.
+        var screen=DeckStats.Of(new List<DeckStats.Game>{
+            new DeckStats.Game{Result="Won",Casual=false,OpponentClass="PRIEST",Settled="2026-11-01T10:00:00Z"},
+            new DeckStats.Game{Result="Lost",Casual=true,OpponentClass="PRIEST",Settled="2026-11-03T10:00:00Z"},
+            new DeckStats.Game{Result="Won",Casual=true,Cards=win,OpponentClass="ROGUE",Settled="2026-11-02T10:00:00Z"},
+            new DeckStats.Game{Result="Tied",Settled="2026-11-04T10:00:00Z"} });
+        Check(screen.RankedWins==1 && screen.RankedLosses==0 && screen.CasualWins==1 && screen.CasualLosses==1,"ranked and casual records");
+        Check(screen.Against("PRIEST").SequenceEqual(new[]{1,1}) && screen.Against("MAGE").SequenceEqual(new[]{1,0}) && screen.Against("ROGUE").SequenceEqual(new[]{0,0}),
+            "older matches take the opponent deck's class; card stats' class wins when both are known");
+        Check(screen.Recent.Select(g=>g.Settled.Substring(8,2)).SequenceEqual(new[]{"03","02","01"}),"recent games newest first, ties excluded");
+        Check(DeckStatsText.Result("Abandoned")=="Lost" && DeckStatsText.Day("not a date")=="","result words and dates");
+
         Check(DeckStatsText.Rate(0,0)=="–" && DeckStatsText.Rate(1,3)=="33%" && DeckStatsText.Rate(2,3)=="67%" && DeckStatsText.Rate(1,2)=="50%","rates are whole percents, a dash with no games");
         Check(DeckStatsText.Record(0,0)=="No games yet" && DeckStatsText.Record(12,7)=="12–7 · 63%","the record line");
         Check(DeckStatsText.Against("DEMONHUNTER",new[]{3,1})=="vs Demon Hunter 3–1" && DeckStatsText.Against(null,new[]{1,1})==null,"the class record");

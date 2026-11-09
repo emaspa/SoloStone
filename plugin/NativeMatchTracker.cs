@@ -293,6 +293,14 @@ internal static class NativeMatchTracker
         Text(new Rect(area.x + row * .3f, area.y, area.width - row * .6f, area.height), attack.ToString(), header, Align.Right);
     }
 
+    // A card tile for another screen (NativeStatsScreen): the tracker's row at that height, with text sized to match.
+    internal static void Tile(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)
+    {
+        if (settings == null) return;
+        Styles(Mathf.Max(8, Mathf.RoundToInt(row * TextShare / RowShare)));
+        Row(x, y, width, row, id, cost, text, count, legendary);
+    }
+
     // One card as a tile: a solid bar, the cost badge on the left, the card's art on the right fading out into the bar, the name over
     // both, and the copies left in a box at the right end (none for a single copy).
     private static void Row(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -61,8 +62,52 @@ public sealed partial class LocalProfile
 
     // The selected deck's stats (DeckStats) over its settled matches, from the in-memory ledger.
     internal DeckStats DeckStatsFor(string deckKey) => string.IsNullOrEmpty(deckKey) ? DeckStats.Empty
-        : DeckStats.Of(data.Matches.Where(match => match != null && LocalDeckRecord.SameDeck(match.Deck, deckKey))
-            .Select(match => new DeckStats.Game { Result = match.Result, Cards = match.CardStats }));
+        : DeckStats.Of(data.Matches.Where(match => match != null && LocalDeckRecord.SameDeck(match.Deck, deckKey)).Select(StatsGame));
+
+    private static DeckStats.Game StatsGame(LocalMatchRecord match)
+    {
+        LocalDeck opponent = null;
+        try { opponent = LocalDecks.Get(match.NpcDeckId ?? match.Opponent); } catch (Exception) { }
+        string opponentClass = null;
+        try { if (opponent?.Hero != null) opponentClass = LocalDecks.HeroClass(opponent.Hero).ToString(); } catch (Exception) { }
+        return new DeckStats.Game { Result = match.Result, Cards = match.CardStats, OpponentClass = opponentClass,
+            Casual = CasualRules.IsCasual(match.Mode), Opponent = opponent?.Name, Settled = match.SettledUtc, Turns = match.Turns };
+    }
+
+    // The stats screen's decks: every deck the player still has that has a decided game, most played first. A deleted deck's
+    // matches stay in the ledger but have no deck to show them under.
+    internal IReadOnlyList<DeckStatsEntry> DeckStatsBook()
+    {
+        var entries = new List<DeckStatsEntry>();
+        var keys = data.Matches.Where(match => match?.Deck != null && match.SettledUtc != null).Select(match => match.Deck)
+            .Distinct(StringComparer.Ordinal).ToList();
+        var customs = CustomDecks;
+        foreach (string matchKey in keys)
+        {
+            string key = matchKey == "custom" ? "custom:" + LegacyCustomDeckId.ToString(System.Globalization.CultureInfo.InvariantCulture) : matchKey;
+            if (entries.Any(entry => entry.Key == key)) continue;
+            string name = null, hero = null; IReadOnlyList<string> cards = null;
+            if (key.StartsWith("custom:", StringComparison.Ordinal))
+            {
+                var deck = customs.FirstOrDefault(custom => "custom:" + custom.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) == key);
+                if (deck == null) continue;
+                name = deck.Name; hero = deck.Hero; cards = deck.Cards.ToList();
+            }
+            else
+            {
+                LocalDeck deck = null;
+                try { deck = LocalDecks.Get(key); } catch (Exception) { }
+                if (deck == null) continue;
+                name = deck.Name; hero = deck.Hero; cards = deck.CardIds;
+            }
+            var stats = DeckStatsFor(key);
+            if (stats.Games == 0) continue;
+            string heroClass = null;
+            try { heroClass = hero == null ? null : LocalDecks.HeroClass(hero).ToString(); } catch (Exception) { }
+            entries.Add(new DeckStatsEntry { Key = key, Name = string.IsNullOrWhiteSpace(name) ? "Deck" : name.Trim(), Class = heroClass, Cards = cards, Stats = stats });
+        }
+        return entries.OrderByDescending(entry => entry.Stats.Games).ThenBy(entry => entry.Name, StringComparer.Ordinal).ToList();
+    }
 }
 
 // The picker's text (pure, no Unity): "12 W - 7 L". An unplayed deck reads "0 W - 0 L" (shown, not hidden: the label does not pop in
