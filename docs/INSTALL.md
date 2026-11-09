@@ -165,6 +165,21 @@ Your copy has the languages your Hearthstone had when you ran setup, usually jus
 The new copy has the languages Battle.net left installed. If Battle.net removed your old language, SoloStone starts
 in the new one. You can switch Battle.net back afterwards: the copy keeps the files it was made with.
 
+## Match overlays
+
+Three overlays show during a match:
+
+- **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
+  counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
+  On by default.
+- **Attack Counter** shows beside each hero how much damage that side's characters can still attack for this turn,
+  or could on its next turn. Off by default.
+- **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
+  is on. On by default.
+
+The T key hides and shows all three. To turn one off for good, set `DeckTracker`, `AttackCounter` or `TurnCountdown`
+under `[Display]` in `BepInEx\config\solostone.plugin.cfg` in the copy to `false`. `DeckTrackerKey` changes the key.
+
 ## What SoloStone leaves alone
 
 - Your Hearthstone folder. It is only read.

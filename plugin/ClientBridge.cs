@@ -30,6 +30,8 @@ internal static class ClientBridge
     private static bool localConnected;
     private static float stageTime;
     private static NativeMatch match;
+    // The match tracker's view of the running match (null outside one).
+    internal static NativeMatch CurrentMatch => match;
     private static string runId, matchId;
     private static PlaytestRecord playtestRecord;
     internal static bool OwnsLiveMatch => staged && requested && localConnected && match?.Game != null
@@ -616,6 +618,8 @@ internal static class ClientBridge
     }
 
     private static bool NpcClientIdle() => NpcClientBusyReason() == null;
+    // The native board has shown everything sent to it (the match tracker refreshes only then).
+    internal static bool BoardSettled() => NpcClientBusyReason() == null;
 
     private static bool NpcTimerSynchronized(int turn)
     {

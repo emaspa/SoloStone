@@ -1333,6 +1333,22 @@ public sealed class NativeMatch
         }
     }
 
+    // Read-only, for the deck tracker's header (NativeMatchTracker): the name of the deck the player chose.
+    internal string PlayerDeckName => playerDeck?.Name;
+
+    // Read-only, for the turn countdown (NativeTurnClock): the time left on the deadline TickTurnTimer enforces for the current
+    // turn, the player's or the NPC's, held still while the NPC clock is paused for a player choice. False between turns,
+    // before the turn's clock has started, once it has run out, and after the NPC has stopped.
+    internal bool TurnTimeLeft(out long milliseconds, out bool npcTurn)
+    {
+        milliseconds = 0; npcTurn = false;
+        if (Game == null || Game.State == State.COMPLETE || Game.Step != Step.MAIN_ACTION || timedTurn != Game.Turn
+            || turnDeadline == long.MaxValue || npcStopped && npcProfile != null) return false;
+        npcTurn = Game.CurrentPlayer == Game.Player2;
+        milliseconds = turnDeadline - (npcClockPausedAt >= 0 ? npcClockPausedAt : TimerNow);
+        return milliseconds > 0;
+    }
+
     private void HideNpcRope()
     {
         if (ropeTurn < 0) return;
