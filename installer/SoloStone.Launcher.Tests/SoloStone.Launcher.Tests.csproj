@@ -55,5 +55,6 @@
     <Compile Include="../../plugin/GameLanguage.cs" Link="GameLanguage.cs" />
     <Compile Include="../../plugin/OptionsPanelLayout.cs" Link="OptionsPanelLayout.cs" />
     <Compile Include="../../plugin/DeckStats.cs" Link="DeckStats.cs" />
+    <Compile Include="../../plugin/DeckTrackerRows.cs" Link="DeckTrackerRows.cs" />
   </ItemGroup>
 </Project>

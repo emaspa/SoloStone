@@ -44,3 +44,32 @@ internal static class DeckTrackerRows
         Build(decklist, decklist.GroupBy(id => id, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal),
             0, 0, decklist.Count, describe);
 }
+
+// The opponent tracker's rows, with no Unity and no engine state: the opponent's cards the player has seen, those from their starting
+// deck and those created in the match, each cheapest first with how many copies were seen. Hand and Deck are the opponent's public
+// card counts.
+internal sealed class OpponentTrackerView
+{
+    internal readonly IReadOnlyList<DeckTrackerRow> Deck, Created;
+    internal readonly int Hand, Remaining;
+    internal OpponentTrackerView(IReadOnlyList<DeckTrackerRow> deck, IReadOnlyList<DeckTrackerRow> created, int hand, int remaining)
+    { Deck = deck; Created = created; Hand = hand; Remaining = remaining; }
+
+    internal int Seen => Deck.Sum(r => r.Count);
+
+    internal string Summary => "hand=" + Hand + " deck=" + Remaining + " seen=" + string.Join(",", Deck.Select(r => r.Id + "x" + r.Count))
+        + " created=" + string.Join(",", Created.Select(r => r.Id + "x" + r.Count));
+}
+
+internal static class OpponentTrackerRows
+{
+    // fromDeck: one id per starting card the player has seen; created: one id per created card the opponent played.
+    internal static OpponentTrackerView Build(IEnumerable<string> fromDeck, IEnumerable<string> created, int hand, int remaining,
+        Func<string, DeckTrackerRows.Card> describe) =>
+        new OpponentTrackerView(Rows(fromDeck, describe), Rows(created, describe), hand, remaining);
+
+    private static IReadOnlyList<DeckTrackerRow> Rows(IEnumerable<string> ids, Func<string, DeckTrackerRows.Card> describe) =>
+        (ids ?? Enumerable.Empty<string>()).Where(id => !string.IsNullOrEmpty(id)).GroupBy(id => id, StringComparer.Ordinal)
+            .Select(group => { var card = describe(group.Key); return new DeckTrackerRow(group.Key, card.Name, card.Cost, group.Count(), card.Legendary); })
+            .OrderBy(r => r.Cost).ThenBy(r => r.Name, StringComparer.Ordinal).ThenBy(r => r.Id, StringComparer.Ordinal).ToList();
+}

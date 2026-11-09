@@ -399,6 +399,8 @@ internal static class NativeOptionsPanels
                     box => NativeMatchTrackerOptions.Attach(0, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 0, "deckTracker", OptionsPanelText.DeckTrackerId, "SoloStoneDeckTrackerCheckbox", OptionsPanelText.DeckTrackerLabel,
                     box => NativeMatchTrackerOptions.Attach(1, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "opponentTracker", OptionsPanelText.OpponentTrackerId, "SoloStoneOpponentTrackerCheckbox", OptionsPanelText.OpponentTrackerLabel,
+                    box => NativeMatchTrackerOptions.Attach(6, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 0, "attackCounter", OptionsPanelText.AttackCounterId, "SoloStoneAttackCounterCheckbox", OptionsPanelText.AttackCounterLabel,
                     box => NativeMatchTrackerOptions.Attach(2, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 1, "cardArt", OptionsPanelText.CardArtId, "SoloStoneCardArtCheckbox", OptionsPanelText.CardArtLabel,

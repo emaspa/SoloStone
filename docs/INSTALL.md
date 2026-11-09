@@ -140,8 +140,8 @@ once.
 - **Language: <name>** is covered under "Game language" below.
 - **Restore Starter Decks** appears only while you have a starter deck hidden.
 
-**Tracker Options** turns the match overlays on and off: Countdown, Deck Tracker and Attack Counter in one column, the
-deck tracker's Card Art, Deck Stats and Mulligan Guide in the other. A change applies at once.
+**Tracker Options** turns the match overlays on and off: Countdown, Deck Tracker, Opponent Tracker and Attack Counter in
+one column, the deck tracker's Card Art, Deck Stats and Mulligan Guide in the other. A change applies at once.
 
 The settings are saved in `BepInEx\config\solostone.plugin.cfg` in the copy.
 
@@ -171,17 +171,22 @@ in the new one. You can switch Battle.net back afterwards: the copy keeps the fi
 
 ## Match overlays
 
-Three overlays show during a match:
+Four overlays show during a match:
 
 - **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
   counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
   Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. On by default.
+- **Opponent Tracker** lists the opponent's cards you have seen down the left edge: cards from their deck that they
+  played, summoned or discarded, or that were revealed some other way, with how many copies. Cards they created during
+  the match and played come in a separate "Created" list. The line under their name gives their class and how many
+  cards are in their hand and deck. It shows only what the game showed you, so a Secret appears once it triggers and
+  nothing in their hand is listed. On by default.
 - **Attack Counter** shows beside each hero how much damage that side's characters can still attack for this turn,
   or could on its next turn. Off by default.
 - **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
   is on. On by default.
 
-The T key hides and shows all three during a match. To turn one off, use **Tracker Options** in Options.
+The T key hides and shows all four during a match. To turn one off, use **Tracker Options** in Options.
 `DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.
 
 ### Deck stats

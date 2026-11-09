@@ -362,6 +362,10 @@ public sealed class NativeMatch
 #if ENGINE_SOURCE
     // Deck stats (CardStats): the player's starting cards by entity id, and the mulligan as the player answered it.
     private Dictionary<int, string> statsStartingCards;
+    // The opponent tracker (NativeMatchTracker): the opponent's starting cards by entity id, which the client sees too, so a card
+    // they show can be told apart from one created in the match.
+    private HashSet<int> opponentStartingIds;
+    internal bool OpponentStartedWith(int entity) => opponentStartingIds != null && opponentStartingIds.Contains(entity);
     private List<string> statsOffered, statsKept;
     private List<int> statsOpening;
     // The history fact count when the player answered the mulligan: the opening deal before it enters the hand too, and a card
@@ -817,6 +821,7 @@ public sealed class NativeMatch
 #if ENGINE_SOURCE
         statsStartingCards = Game.Player1.DeckZone.Concat(Game.Player1.HandZone).Where(card => card.Card.Id != "GAME_005")
             .ToDictionary(card => card.Id, card => card.Card.Id);
+        opponentStartingIds = new HashSet<int>(Game.Player2.DeckZone.Concat(Game.Player2.HandZone).Where(card => card.Card.Id != "GAME_005").Select(card => card.Id));
 #endif
         ObserveRewardHistory(Game.PowerHistory.Last);
         SendHistory(Game.PowerHistory.Last);

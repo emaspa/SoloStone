@@ -15,6 +15,11 @@ using static MatchOverlay;
 // attack never changes a counter, before its animation shows it. Before the first refresh the deck tracker shows the chosen
 // decklist. None takes input or changes game state; the toggle key (MatchOverlay) only hides them. Every path fails closed: an
 // error disables them for the session with one warning.
+// The opponent tracker: a panel down the left edge listing the opponent's cards the player has seen (OpponentTrackerRows), from the
+// engine's history as the player's fair view shows it (HistoryFacts.ProjectForFairView, the view the NPC plays from, here for the
+// player's side): played, summoned, discarded and otherwise revealed cards from their starting deck, then the cards they created and
+// played. A Secret stays hidden until it is revealed; nothing in their hand or deck shows. Under the name: their hand and deck
+// counts. It fails closed on its own: an error turns only the opponent tracker off for the session.
 internal static class NativeMatchTracker
 {
     private static MatchTrackerSettings settings;
@@ -31,6 +36,10 @@ internal static class NativeMatchTracker
     private static int friendlyAttack = -1, opposingAttack = -1;
     private static Rect friendlyHero, opposingHero;
     private static int heroesFrame = -100;
+    // The opponent tracker: what the player has seen of the opponent's cards, and the panel's header.
+    private static OpponentTrackerView opponent;
+    private static bool opponentFailed;
+    private static string opponentName = "Opponent", opponentTitle = "Opponent", opponentClass = "";
 #if ENGINE_SOURCE
     private static OwnDeckLedger ledger;
 #endif
@@ -45,13 +54,16 @@ internal static class NativeMatchTracker
         {
             var match = ClientBridge.CurrentMatch;
             var game = match?.Game;
-            if (!settings.DeckTracker && !settings.AttackCounter || game == null || !MatchOverlay.InMatch()) { Forget(); return; }
+            if (!settings.DeckTracker && !settings.AttackCounter && !settings.OpponentTracker || game == null || !MatchOverlay.InMatch()) { Forget(); return; }
             if (!ReferenceEquals(match, tracked))
             {
                 Forget(); tracked = match;
                 deckName = string.IsNullOrWhiteSpace(match.PlayerDeckName) ? "Deck" : match.PlayerDeckName.Trim();
                 view = DeckTrackerRows.Decklist(game.Player1.DeckCards.Select(c => c.Id).ToList(), Describe);
                 LoadStats(game.Player2?.Hero?.Card?.Class.ToString());
+                opponentName = string.IsNullOrWhiteSpace(match.OpponentName) ? "Opponent" : match.OpponentName.Trim();
+                opponentClass = DeckStatsText.ClassName(game.Player2?.Hero?.Card?.Class.ToString());
+                opponent = OpponentTrackerRows.Build(null, null, game.Player2?.HandZone?.Count ?? 0, game.Player2?.DeckZone?.Count ?? 0, Describe);
             }
 #if ENGINE_SOURCE
             if (settings.AttackCounter && Time.frameCount - heroesFrame >= 30) { heroesFrame = Time.frameCount; PlaceHeroes(); }
@@ -66,14 +78,52 @@ internal static class NativeMatchTracker
                 var known = ledger.Track(game, game.Player1);
                 view = DeckTrackerRows.Build(game.Player1.DeckCards.Select(c => c.Id), known.Known, known.Unknown, known.UnseenRemoved, known.Remaining, Describe);
             }
+            if (settings.OpponentTracker && !opponentFailed) ObserveOpponent(game, match);
             observedHistory = history;
             string summary = view?.Summary ?? "off";
             summary += " attack=" + friendlyAttack + "/" + opposingAttack;
             if (summary != lastSummary) { lastSummary = summary; log.LogInfo("DECK_TRACKER " + summary); }
+            string seen = settings.OpponentTracker ? opponent?.Summary : null;
+            if (seen != null && seen != lastOpponent) { lastOpponent = seen; log.LogInfo("OPPONENT_TRACKER " + seen); }
 #endif
         }
         catch (Exception error) { Fail(error); }
     }
+
+#if ENGINE_SOURCE
+    private static string lastOpponent;
+
+    // The opponent's cards as the player's fair view of the history shows them. The fair view keeps a fact's card only when the
+    // player saw it, and hides the entity of a card now in a hidden zone; the same fact in the full history (matched by sequence)
+    // gives the entity, which says whether the card was in the opponent's starting deck. Entity ids are public in the client too.
+    private static void ObserveOpponent(SabberStoneCore.Model.Game game, NativeMatch match)
+    {
+        try
+        {
+            var them = game.Player2;
+            var full = new Dictionary<long, SabberStoneCore.Model.HistoryCardFact>();
+            foreach (var fact in game.HistoryFacts.Query.Events<SabberStoneCore.Model.HistoryCardFact>()) full[fact.Sequence] = fact;
+            var fair = game.HistoryFacts.ProjectForFairView(game, game.Player1.PlayerId);
+            var revealed = new Dictionary<int, string>();
+            var created = new List<string>();
+            foreach (var fact in fair.Query.Events<SabberStoneCore.Model.HistoryCardFact>())
+            {
+                if (!fact.DefinitionKnown || !full.TryGetValue(fact.Sequence, out var source)) continue;
+                var card = SabberStoneCore.Model.Cards.FromAssetId(fact.DbfId);
+                if (card == null || card.Id == "GAME_005" || card.Type == SabberStoneCore.Enums.CardType.HERO_POWER
+                    || card.Type == SabberStoneCore.Enums.CardType.ENCHANTMENT) continue;
+                if (match.OpponentStartedWith(source.EntityId)) { if (!revealed.ContainsKey(source.EntityId)) revealed[source.EntityId] = card.Id; }
+                else if (fact is SabberStoneCore.Model.CardPlayedFact && fact.ControllerId == them.Id) created.Add(card.Id);
+            }
+            opponent = OpponentTrackerRows.Build(revealed.Values, created, them.HandZone.Count, them.DeckZone.Count, Describe);
+        }
+        catch (Exception error)
+        {
+            opponentFailed = true; opponent = null;
+            log?.LogWarning("OPPONENT_TRACKER off for the session: " + error);
+        }
+    }
+#endif
 
     // The deck's record and card rates from the profile's settled matches. A profile that can't answer leaves the tracker without
     // stats, not off.
@@ -99,6 +149,10 @@ internal static class NativeMatchTracker
         if (tracked != null) CardArt.Clear();
         tracked = null; view = null; observedHistory = -1; lastSummary = null; measuredView = null; drawnWidth = 0f; deckName = title = "Deck";
         stats = null; recordLine = null;
+        opponent = null; opponentName = opponentTitle = "Opponent"; opponentClass = ""; measuredOpponent = null; opponentWidth = 0f;
+#if ENGINE_SOURCE
+        lastOpponent = null;
+#endif
         friendlyAttack = opposingAttack = -1; friendlyHero = opposingHero = Rect.zero; heroesFrame = -100;
 #if ENGINE_SOURCE
         ledger = null;
@@ -173,6 +227,7 @@ internal static class NativeMatchTracker
         try
         {
             if (settings.AttackCounter) { Counter(friendlyHero, friendlyAttack); Counter(opposingHero, opposingAttack); }
+            if (settings.OpponentTracker && !opponentFailed) DrawOpponent();
             if (!settings.DeckTracker || view == null) return;
             bool statsShown = settings.DeckStats && stats != null, columns = statsShown && MatchOverlay.StatsShown;
             if (statsShown && settings.MulliganGuide) MulliganGuide();
@@ -237,6 +292,52 @@ internal static class NativeMatchTracker
                     : "Win rates over " + stats.TrackedGames + (stats.TrackedGames == 1 ? " game" : " games") + " (" + settings.StatsKey + " hides them)", small, Align.Left);
         }
         catch (Exception error) { Fail(error); }
+    }
+
+    // The opponent tracker's panel, down the left edge: the opponent's name, their hand and deck counts, the cards seen from their
+    // deck, then the ones they created. Sized like the deck tracker's, shrinking its rows to fit.
+    private static OpponentTrackerView measuredOpponent;
+    private static int measuredOpponentRow;
+    private static float opponentWidth;
+    private static void DrawOpponent()
+    {
+        var seen = opponent;
+        if (seen == null) return;
+        int height = Screen.height;
+        bool created = seen.Created.Count > 0;
+        int lines = Math.Max(1, seen.Deck.Count) + seen.Created.Count;
+        float extra = StatsLine + (created ? StatsLine : 0f);
+        float top = height * TopShare, available = height * BottomShare - top;
+        float line = height * TextShare;
+        float row = Mathf.Min(height * RowShare, (available - line * (1.6f + extra)) / lines);
+        line = Mathf.Min(line, row);
+        if (row < height * TextShare * .75f) { row = available / (lines + 1.6f + extra); line = row; }
+        Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
+        float pad = line * .35f;
+        string counts = (string.IsNullOrEmpty(opponentClass) ? "" : opponentClass + "  ·  ") + "Hand " + seen.Hand + "  ·  Deck " + seen.Remaining;
+        if (!ReferenceEquals(measuredOpponent, seen) || measuredOpponentRow != styleRow)
+        {
+            float names = Measure("No cards seen yet", note).x;
+            foreach (var entry in seen.Deck.Concat(seen.Created)) names = Mathf.Max(names, Measure(entry.Name, name).x);
+            float needed = Mathf.Max(pad * 2 + row * .86f + line * .35f + names + row * 1.2f, pad * 2 + Measure(counts, small).x);
+            opponentWidth = Mathf.Clamp(needed, height * RowShare * WidthRows, height * RowShare * MaxWidthRows);
+            opponentTitle = Fit(opponentName, opponentWidth - pad * 2, header);
+            measuredOpponent = seen; measuredOpponentRow = styleRow;
+        }
+        float x = height * MarginShare, listWidth = opponentWidth - pad * 2;
+        float panelHeight = pad * 2 + line * (1.3f + extra) + lines * row;
+        GUI.DrawTexture(new Rect(x, top, opponentWidth, panelHeight), panel);
+        float y = top + pad;
+        Text(new Rect(x + pad, y, listWidth, line * 1.3f), opponentTitle, header, Align.Left);
+        y += line * 1.3f;
+        Text(new Rect(x + pad, y, listWidth, line * StatsLine), counts, small, Align.Left);
+        y += line * StatsLine;
+        if (seen.Deck.Count == 0) { Text(new Rect(x + pad, y, listWidth, row), "No cards seen yet", note, Align.Left); y += row; }
+        foreach (var entry in seen.Deck) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); y += row; }
+        if (!created) return;
+        Text(new Rect(x + pad, y, listWidth, line * StatsLine), "Created", small, Align.Left);
+        y += line * StatsLine;
+        foreach (var entry in seen.Created) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); y += row; }
     }
 
     // A card's three win rates (opening hand, drawn, played), each shaded red to green around 50%.

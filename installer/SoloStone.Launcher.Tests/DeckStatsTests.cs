@@ -12,6 +12,14 @@ static partial class Program
         new LocalMatchCardStats { OpponentClass=opponent, Offered=offered.ToList(), Kept=kept.ToList(), Opening=opening.ToList(), Drawn=drawn.ToList(), Played=played.ToList() };
 
     static void DeckStatsTests() {
+        // The opponent tracker's rows: copies seen per card, cheapest first, created cards apart, the public counts kept.
+        DeckTrackerRows.Card Describe(string id) => new DeckTrackerRows.Card{Name=id=="L"?"Legend":"Card "+id,Cost=id=="L"?8:id=="X"?1:3,Legendary=id=="L"};
+        var opponent=OpponentTrackerRows.Build(new[]{"A","L","X","A"},new[]{"T","T"},4,21,Describe);
+        Check(opponent.Deck.Select(r=>r.Id+r.Count).SequenceEqual(new[]{"X1","A2","L1"}) && opponent.Deck[2].Legendary && opponent.Seen==4,"opponent cards from their deck: copies seen, cheapest first");
+        Check(opponent.Created.Count==1 && opponent.Created[0].Id=="T" && opponent.Created[0].Count==2,"created cards counted apart");
+        Check(opponent.Hand==4 && opponent.Remaining==21 && opponent.Summary=="hand=4 deck=21 seen=Xx1,Ax2,Lx1 created=Tx2","opponent counts and log line");
+        var none=OpponentTrackerRows.Build(null,new string[]{null,""},0,30,Describe);
+        Check(none.Deck.Count==0 && none.Created.Count==0 && none.Seen==0,"nothing seen yet");
         var win=CardStats("MAGE",new[]{"A","B","C"},new[]{"A","B"},new[]{"A","B","D"},new[]{"A","B","D","E","E"},new[]{"A","E"});
         var loss=CardStats("WARRIOR",new[]{"A","B","F"},new[]{"B"},new[]{"B","C","G"},new[]{"B","C","G"},new[]{"B"});
         var games=new List<DeckStats.Game>{
