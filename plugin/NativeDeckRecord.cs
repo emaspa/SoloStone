@@ -239,6 +239,23 @@ internal static class NativeDeckRecord
         return type.StartsWith("ParticleSystem", StringComparison.Ordinal) || type == "TrailRenderer" || type == "LineRenderer";
     }
 
+    // An animated hero skin draws its portrait on a render-texture quad much larger than the frame it sits in (live 2026-11-10, Turalyon
+    // HERO_04bk: "Custom Frame/HERO_04bk_Turalyon_RTT(Clone)/Portrait_RTT" spans 684x675 px around a 419x442 frame and reaches below the
+    // hero name, so no spot was free and the record line never showed). Its visible art stays inside that frame, and the frame is measured
+    // itself, so a renderer under an "_RTT" node is left out when an enabled ancestor renderer (the frame) has bounds.
+    private static bool InsideRenderTextureFrame(Renderer renderer, GameObject root)
+    {
+        bool rtt = false;
+        for (Transform node = renderer.transform; node != null && node != root.transform; node = node.parent)
+        {
+            rtt |= node.name.IndexOf("_RTT", StringComparison.Ordinal) >= 0;
+            if (!rtt || node == renderer.transform) continue;
+            var frame = node.GetComponent<Renderer>();
+            if (frame != null && frame.enabled && frame.bounds.size.sqrMagnitude > 0) return true;
+        }
+        return false;
+    }
+
     // Screen rect of visible art: the union of its enabled mesh/sprite renderers' bounds (no particles, nothing under the record line).
     private static DeckRect? ArtRectOf(object art)
     {
@@ -249,7 +266,7 @@ internal static class NativeDeckRecord
         Bounds? union = null;
         foreach (var renderer in go.GetComponentsInChildren<Renderer>(false))
         {
-            if (renderer == null || !renderer.enabled || IsEffect(renderer)) continue;
+            if (renderer == null || !renderer.enabled || IsEffect(renderer) || InsideRenderTextureFrame(renderer, go)) continue;
             if (clone != null && renderer.transform.IsChildOf(clone.transform)) continue;
             if (renderer.bounds.size.sqrMagnitude <= 0) continue;
             if (union.HasValue) { var b = union.Value; b.Encapsulate(renderer.bounds); union = b; } else union = renderer.bounds;
