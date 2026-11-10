@@ -56,5 +56,8 @@
     <Compile Include="../../plugin/OptionsPanelLayout.cs" Link="OptionsPanelLayout.cs" />
     <Compile Include="../../plugin/DeckStats.cs" Link="DeckStats.cs" />
     <Compile Include="../../plugin/DeckTrackerRows.cs" Link="DeckTrackerRows.cs" />
+    <Compile Include="../../plugin/CardChips.cs" Link="CardChips.cs" />
+    <Compile Include="../../plugin/SecretCandidates.cs" Link="SecretCandidates.cs" />
+    <Compile Include="../../plugin/CardHistory.cs" Link="CardHistory.cs" />
   </ItemGroup>
 </Project>

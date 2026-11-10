@@ -66,10 +66,7 @@ internal static class NativeTurnClock
         log?.LogWarning("TURN_CLOCK disabled for the session: " + error);
     }
 
-    // Drawing. Sizes are shares of the screen height, like the attack counter beside each hero.
-    private static GUIStyle digits;
-    private static int styleSize;
-    private static Texture2D panel;
+    // Drawing: a pill in the card chips' style (NativeCardChips.Badge), like the attack counter beside each hero.
     private static readonly Color Calm = new Color(1f, 1f, 1f, .95f), Amber = new Color(1f, .74f, .3f), Red = new Color(1f, .33f, .28f);
 
     // Called from OfflineProbe.OnGUI. Repaint only: it takes no input.
@@ -79,32 +76,24 @@ internal static class NativeTurnClock
         try
         {
             int height = Screen.height;
-            float row = height * NativeMatchTracker.TextShare * 1.25f;
-            int size = Mathf.Max(8, Mathf.RoundToInt(row * .8f));
-            if (digits == null || styleSize != size) { digits = Label(size, Calm); styleSize = size; }
-            panel = panel ?? Solid(NativeMatchTracker.PanelColor);
             long seconds = Seconds(left);
             string text = seconds / 60 + ":" + (seconds % 60).ToString("00");
-            // Sized for the widest reading, so the box does not twitch as the digits change.
-            float boxWidth = Measure("0:00", digits).x + row * .9f, boxHeight = row * 1.25f, margin = height * NativeMatchTracker.MarginShare;
-            float x, y;
+            float pill = NativeCardChips.PillHeight, margin = height * NativeMatchTracker.MarginShare, x, y;
             if (button.width > 0)
             {
-                x = button.center.x - boxWidth / 2f;
-                y = button.yMin - margin - boxHeight;
+                x = button.center.x;
+                y = button.yMin - margin - pill / 2f;
             }
             else
             {
                 // No button on screen: the right edge, vertically centred, left of the deck tracker's column when it shows.
                 float column = MatchOverlay.Settings.DeckTracker ? NativeMatchTracker.PanelWidth(height) + margin : 0f;
-                x = Screen.width - margin - column - boxWidth;
-                y = (height - boxHeight) / 2f;
+                x = Screen.width - margin - column - pill * 2f;
+                y = height / 2f;
             }
-            x = Mathf.Clamp(x, 0f, Mathf.Max(0f, Screen.width - boxWidth)); y = Mathf.Clamp(y, 0f, Mathf.Max(0f, height - boxHeight));
-            var area = new Rect(x, y, boxWidth, boxHeight);
-            GUI.DrawTexture(area, panel);
-            digits.normal.textColor = seconds > RopeSeconds ? Calm : seconds > RedSeconds ? Amber : Red;
-            Text(area, text, digits, Align.Center);
+            y = Mathf.Clamp(y, pill / 2f, Mathf.Max(pill / 2f, height - pill / 2f));
+            // Sized for the widest reading, so the pill does not twitch as the digits change.
+            NativeCardChips.Badge(text, seconds > RopeSeconds ? Calm : seconds > RedSeconds ? Amber : Red, x, y, NativeCardChips.Anchor.Centre, "0:00");
         }
         catch (Exception error) { Fail(error); }
     }

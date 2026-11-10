@@ -3,9 +3,9 @@ using BepInEx.Logging;
 using UnityEngine;
 
 // Options > Tracker Options: checkboxes for the match overlays (MatchOverlay): Countdown, Deck Tracker, Opponent Tracker and Attack Counter
-// in the left column, and the deck tracker's Card Art, Deck Stats and Mulligan Guide in the right one (NativeOptionsPanels builds the rows
+// in the left column, and the deck tracker's Card Art, Deck Stats and Mulligan Guide, Hand Chips and Counter Chips in the right one, Secret Helper and Card History under the left one (NativeOptionsPanels builds the rows
 // and hands each to Attach). Each applies at once and persists in the BepInEx config ([Display] TurnCountdown, DeckTracker,
-// AttackCounter, CardArt, DeckStats, MulliganGuide, OpponentTracker). The countdown only runs while the Turn Timer does, and its label says so
+// AttackCounter, CardArt, DeckStats, MulliganGuide, OpponentTracker, CardChips, SecretHelper, CounterChips, CardHistory). The countdown only runs while the Turn Timer does, and its label says so
 // (OptionsPanelText.CountdownLabel). Every path fails closed: a failed save logs one warning and the box shows the saved value.
 internal static class NativeMatchTrackerOptions
 {
@@ -32,11 +32,15 @@ internal static class NativeMatchTrackerOptions
             new Row { Key = "DeckStats", Get = () => settings.DeckStats, Set = value => settings.DeckStats = value },
             new Row { Key = "MulliganGuide", Get = () => settings.MulliganGuide, Set = value => settings.MulliganGuide = value },
             new Row { Key = "OpponentTracker", Get = () => settings.OpponentTracker, Set = value => settings.OpponentTracker = value },
+            new Row { Key = "CardChips", Get = () => settings.CardChips, Set = value => settings.CardChips = value },
+            new Row { Key = "SecretHelper", Get = () => settings.SecretHelper, Set = value => settings.SecretHelper = value },
+            new Row { Key = "CounterChips", Get = () => settings.CounterChips, Set = value => settings.CounterChips = value },
+            new Row { Key = "CardHistory", Get = () => settings.CardHistory, Set = value => settings.CardHistory = value },
         };
     }
 
     // The panel's row for setting `index` (0 Countdown, 1 Deck Tracker, 2 Attack Counter, 3 Card Art, 4 Deck Stats, 5 Mulligan Guide,
-    // 6 Opponent Tracker),
+    // 6 Opponent Tracker, 7 Hand Chips, 8 Secret Helper, 9 Counter Chips, 10 Card History),
     // built once; it stays for the session.
     internal static void Attach(int index, CheckBox box)
     {

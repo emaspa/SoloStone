@@ -13,11 +13,13 @@ internal static class OptionsPanelText
     internal const string SoloStoneButtonObject = "SoloStoneOptionsButton", TrackerButtonObject = "SoloStoneTrackerOptionsButton";
     internal const string HandheldId = "options.handheld", CountdownId = "options.countdown", DeckTrackerId = "options.deck-tracker",
         AttackCounterId = "options.attack-counter", CardArtId = "options.card-art", DeckStatsId = "options.deck-stats",
-        MulliganGuideId = "options.mulligan-guide", OpponentTrackerId = "options.opponent-tracker";
+        MulliganGuideId = "options.mulligan-guide", OpponentTrackerId = "options.opponent-tracker", CardChipsId = "options.card-chips",
+        SecretHelperId = "options.secret-helper", CounterChipsId = "options.counter-chips", CardHistoryId = "options.card-history";
     // The countdown only runs while the Turn Timer does (NativeTurnClock), so its label says so.
     internal const string CountdownLabel = "Countdown\n(with Turn Timer)", DeckTrackerLabel = "Deck Tracker", AttackCounterLabel = "Attack Counter";
     internal const string CardArtLabel = "Card Art", DeckStatsLabel = "Deck Stats", MulliganGuideLabel = "Mulligan Guide";
-    internal const string OpponentTrackerLabel = "Opponent Tracker";
+    internal const string OpponentTrackerLabel = "Opponent Tracker", CardChipsLabel = "Hand Chips", SecretHelperLabel = "Secret Helper",
+        CounterChipsLabel = "Counter Chips", CardHistoryLabel = "Card History";
     internal static string ButtonId(string panel) => panel == SoloStoneKey ? SoloStoneButtonId : TrackerButtonId;
     internal static string BackId(string panel) => ButtonId(panel) + ".back";
     internal static string DoneId(string panel) => ButtonId(panel) + ".done";

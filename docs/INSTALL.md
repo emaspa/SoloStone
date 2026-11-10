@@ -140,8 +140,9 @@ once.
 - **Language: <name>** is covered under "Game language" below.
 - **Restore Starter Decks** appears only while you have a starter deck hidden.
 
-**Tracker Options** turns the match overlays on and off: Countdown, Deck Tracker, Opponent Tracker and Attack Counter in
-one column, the deck tracker's Card Art, Deck Stats and Mulligan Guide in the other. A change applies at once.
+**Tracker Options** turns the match overlays on and off. One column has Countdown, Deck Tracker, Opponent Tracker,
+Attack Counter, Secret Helper and Card History. The other has the deck tracker's Card Art, Deck Stats and Mulligan
+Guide, then Hand Chips and Counter Chips. A change applies at once.
 
 The settings are saved in `BepInEx\config\solostone.plugin.cfg` in the copy.
 
@@ -171,7 +172,7 @@ in the new one. You can switch Battle.net back afterwards: the copy keeps the fi
 
 ## Match overlays
 
-Four overlays show during a match:
+These overlays show during a match:
 
 - **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
   counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
@@ -181,12 +182,28 @@ Four overlays show during a match:
   the match and played come in a separate "Created" list. The line under their name gives their class and how many
   cards are in their hand and deck. It shows only what the game showed you, so a Secret appears once it triggers and
   nothing in their hand is listed. On by default.
-- **Attack Counter** shows beside each hero how much damage that side's characters can still attack for this turn,
-  or could on its next turn. Off by default.
+- **Attack Counter** shows how much damage each side's characters can still attack for this turn, or could on its
+  next turn: left of your hero, under the opponent's portrait. Off by default.
 - **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
   is on. On by default.
+- **Hand Chips** puts a chip under each card in the opponent's hand: a letter for how it got there and the round it
+  came in. T3 is their draw at the start of round 3, D3 a card drawn by another card, C3 a card they created, R3 a
+  card returned to their hand. K and M mark their opening hand, kept or got in the mulligan, and Coin is the Coin.
+  The chip turns red when the card is Temporary. Hover a chip to read which card drew, created or returned it, if you
+  saw that card. On by default.
+- **Counter Chips** puts a chip on a hero power that was Imbued, with how many times, and beside a quest or sidequest
+  with its progress. On by default.
+- **Secret Helper** lists the Secrets the opponent's class could have, left of their hero, while they have one hidden.
+  Before each of your actions the game tries that action against every candidate. When a candidate would have gone off and
+  their Secret stayed hidden, it is crossed out. Hover a name for its text. If every candidate is crossed out, the
+  Secret came from another class. On by default.
+- **Card History** applies to cards that resurrect minions that died, recast the spells you cast, or repeat the
+  Battlecries you played. Hovering one shows the cards it would draw on so far, at 40% size, beside it. It reads
+  the card's text, so an unusual wording may show nothing. On by default.
 
-The T key hides and shows all four during a match. To turn one off, use **Tracker Options** in Options.
+The chips, the attack counter and the countdown share one style: a dark pill with a gold edge.
+
+The T key hides and shows all of them during a match. To turn one off, use **Tracker Options** in Options.
 `DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.
 
 ### Deck stats
