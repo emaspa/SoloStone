@@ -113,6 +113,10 @@ public sealed class LocalMatchRecord
     // tier rewards; Casual holds its hidden-MMR step (CasualRules).
     public string Mode;
     public LocalCasualReceipt Casual;
+    // The player's cards in this match (DeckStats): settled records only. Additive and optional like Mode (no version bump;
+    // written only when present, so older saves stay byte-identical). Never part of the settlement conflict check.
+    public LocalMatchCardStats CardStats;
+    public bool ShouldSerializeCardStats() => CardStats != null;
 }
 
 public sealed class LocalCasualReceipt
@@ -779,7 +783,8 @@ public sealed partial class LocalProfile : IDisposable
     // opponentRating: the NPC's rating; null = the pending record's NpcRating, else the player's own rating.
     // npcConceded: the NPC conceded (NativeMatch.OpponentConceded); null = not recorded.
     public LocalMatchRecord Settle(string id, string result, int turns, bool conceded, LocalRewardFacts facts = null, double? opponentRating = null,
-        bool? npcConceded = null, LocalAchievementMatchEvidence achievementEvidence = null, LocalPetXpCounts petXp = null)
+        bool? npcConceded = null, LocalAchievementMatchEvidence achievementEvidence = null, LocalPetXpCounts petXp = null,
+        LocalMatchCardStats cardStats = null)
     {
         if ((result != "Won" && result != "Lost" && result != "Tied") || turns < 0 || turns > MaximumTurns
             || (conceded && result != "Lost") || (npcConceded == true && (result != "Won" || conceded)))
@@ -829,6 +834,8 @@ public sealed partial class LocalProfile : IDisposable
         match.NpcConceded = npcConceded;
         // Offered counts are only the input of ApplyPetReceipt: they stay on the receipt under event rules (rule 2 or 3) with a pet recipient.
         match.PetSmall = petXp?.Small; match.PetMedium = petXp?.Medium; match.PetLarge = petXp?.Large;
+        // Card stats are a record, never a reward input: an invalid set is dropped, not a reason to refuse the result.
+        match.CardStats = LocalMatchCardStats.Valid(cardStats) ? LocalMatchCardStats.Clone(cardStats) : null;
         ApplyMatchReceipt(next, match, opponentRating, reward.Dust);
         SettleAchievements(next, match, achievementEvidence);
         match.RivalGold = RivalGoldFor(next.Matches, match);
@@ -2145,6 +2152,8 @@ public sealed partial class LocalProfile : IDisposable
         if (match.RivalGold != 0 && (match.RivalGold != LocalNpcRecord.RivalSettleGold || pending || match.Result != "Won"
             || string.IsNullOrEmpty(match.NpcId)))
             throw new InvalidOperationException("Invalid rivalry reward.");
+        if (match.CardStats != null && (pending || !LocalMatchCardStats.Valid(match.CardStats)))
+            throw new InvalidOperationException("Invalid match card stats.");
         if (match.DeckHero != null && !(profileVersion <= 6 ? V6Heroes : profileVersion == 7 ? V7Heroes : LocalCoreProgression.Heroes).Contains(match.DeckHero))
             throw new InvalidOperationException("Invalid match class.");
         if (profileVersion == 1)
@@ -2457,7 +2466,8 @@ public sealed partial class LocalProfile : IDisposable
         AchievementContext = Copy(match.AchievementContext), AchievementEvidenceFingerprint = match.AchievementEvidenceFingerprint,
         AchievementGrants = match.AchievementGrants?.Select(Copy).ToList(), Mode = match.Mode,
         Casual = match.Casual == null ? null : new LocalCasualReceipt { RatingBefore = match.Casual.RatingBefore,
-            RatingAfter = match.Casual.RatingAfter, OpponentRating = match.Casual.OpponentRating }
+            RatingAfter = match.Casual.RatingAfter, OpponentRating = match.Casual.OpponentRating },
+        CardStats = LocalMatchCardStats.Clone(match.CardStats)
     };
 
     private static LocalDeckCard Copy(LocalDeckCard card) => card == null ? null : new LocalDeckCard { Id = card.Id, Premium = card.Premium };

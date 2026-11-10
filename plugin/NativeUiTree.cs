@@ -107,8 +107,9 @@ internal static class NativeUiTree
         foreach (var deckBox in UnityEngine.Object.FindObjectsByType<CollectionDeckBoxVisual>(FindObjectsSortMode.None))
             if (NativeUIProjection.HideableLoanerKey(deckBox.GetDeckID()) != null)
                 Name(deckBox.m_deleteButton, NativeStarterText.DeleteButtonId(deckBox.GetDeckID()));
-        // Options: the SoloStone Options plank, then the rows and the Back, Done and outside click of its panel.
+        // Options: the SoloStone Options and Tracker Options planks, then the rows and the Back, Done and outside click of their panels.
         Name(NativeOptionsPanels.SoloStoneButton, OptionsPanelText.SoloStoneButtonId);
+        Name(NativeOptionsPanels.TrackerButton, OptionsPanelText.TrackerButtonId);
         foreach (var control in NativeOptionsPanels.Controls) Name(control.Key, control.Value);
         Name(NativeStarterDecks.OptionsButton, NativeStarterText.OptionsId);
         Name(NativeOptionsPace.OptionsButton, NativeOptionsPaceText.Id);
@@ -117,6 +118,9 @@ internal static class NativeUiTree
         Name(NativeFpsCounter.Checkbox, NativeFpsCounterText.Id);
         Name(NativeDeckInferenceOption.Checkbox, NativeDeckInferenceText.Id);
         Name(NativeLanguageOption.OptionsButton, GameLanguage.Id);
+        Name(NativeMatchTrackerOptions.Box(0), OptionsPanelText.CountdownId);
+        Name(NativeMatchTrackerOptions.Box(1), OptionsPanelText.DeckTrackerId);
+        Name(NativeMatchTrackerOptions.Box(2), OptionsPanelText.AttackCounterId);
         Name(NativeTurnTimerOption.Dismiss, "options.dismiss");
         Name(NativePackFlip.Button, PackFlipText.ButtonId);
         // The hub gear (allowed only by native identity, UiRules.GameMenuControlAllowed) and the Game Menu's Options row.

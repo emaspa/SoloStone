@@ -155,6 +155,7 @@ static partial class Program
             PluginSubsetTests(temp);
             LanguageTests(temp);
             OptionsPanelTests();
+            DeckStatsTests();
             ClientCheckTests(temp);
             Round2Tests(temp,source,bundle,supported,saves);
             BoundaryTests();
