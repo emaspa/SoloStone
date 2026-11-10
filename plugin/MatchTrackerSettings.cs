@@ -3,10 +3,10 @@ using UnityEngine;
 
 // Global, read every frame: all of them apply at once. Options > Tracker Options has a checkbox for each switch (NativeMatchTrackerOptions);
 // the keys are config only. Shared by the in-match overlays through MatchOverlay: the deck tracker and the opponent tracker (with its card art, deck stats and
-// mulligan guide), the attack counters and the turn countdown.
+// mulligan guide), the card chips, the secret helper, the attack counters and the turn countdown.
 internal sealed class MatchTrackerSettings
 {
-    private readonly ConfigEntry<bool> deckTracker, attackCounter, turnCountdown, cardArt, deckStats, mulliganGuide, opponentTracker;
+    private readonly ConfigEntry<bool> deckTracker, attackCounter, turnCountdown, cardArt, deckStats, mulliganGuide, opponentTracker, cardChips, secretHelper, counterChips, cardHistory;
     private readonly ConfigEntry<KeyCode> toggle, statsKey;
     // The Options checkboxes write through these setters: each saves at once, and a failed save restores the previous value.
     internal bool DeckTracker { get => deckTracker.Value; set => Save(deckTracker, value); }
@@ -16,6 +16,12 @@ internal sealed class MatchTrackerSettings
     internal bool DeckStats { get => deckStats.Value; set => Save(deckStats, value); }
     internal bool MulliganGuide { get => mulliganGuide.Value; set => Save(mulliganGuide, value); }
     internal bool OpponentTracker { get => opponentTracker.Value; set => Save(opponentTracker, value); }
+    internal bool CardChips { get => cardChips.Value; set => Save(cardChips, value); }
+    internal bool SecretHelper { get => secretHelper.Value; set => Save(secretHelper, value); }
+    internal bool CounterChips { get => counterChips.Value; set => Save(counterChips, value); }
+    internal bool CardHistory { get => cardHistory.Value; set => Save(cardHistory, value); }
+    // Any of the overlays that need the match's game: all but the turn countdown.
+    internal bool AnyTracker => DeckTracker || AttackCounter || OpponentTracker || CardChips || SecretHelper || CounterChips || CardHistory;
     private readonly ConfigFile file;
     internal KeyCode Toggle => toggle.Value;
     internal KeyCode StatsKey => statsKey.Value;
@@ -39,6 +45,14 @@ internal sealed class MatchTrackerSettings
             "During the mulligan, show under each card how often you kept it and your win rate with it in your opening hand. On by default. Also in Options > Tracker Options.");
         opponentTracker = file.Bind("Display", "OpponentTracker", true,
             "In a match, list the opponent's cards you have seen: played, summoned, revealed or discarded from their deck, and the ones they created. On by default. Also in Options > Tracker Options.");
+        cardChips = file.Bind("Display", "CardChips", true,
+            "In a match, put a chip under each card in the opponent's hand: a letter for how it came (T drawn at the start of a turn, D drawn by a card, C created, R returned, K kept, M from the mulligan) and the round, red when it is Temporary. Hover a chip for more. On by default. Also in Options > Tracker Options (Hand Chips).");
+        counterChips = file.Bind("Display", "CounterChips", true,
+            "In a match, put a chip on a hero power with how many times it was Imbued, and beside a quest or other counter with its progress. On by default. Also in Options > Tracker Options.");
+        cardHistory = file.Bind("Display", "CardHistory", true,
+            "In a match, hovering a card that resurrects minions, recasts spells or repeats Battlecries shows the cards it would draw on, at 40% size. On by default. Also in Options > Tracker Options.");
+        secretHelper = file.Bind("Display", "SecretHelper", true,
+            "In a match, while the opponent has a hidden Secret, list the Secrets their class could have beside their hero and dim the ones your plays have ruled out. Hover a name for its text. On by default. Also in Options > Tracker Options.");
         statsKey = file.Bind("Display", "DeckStatsKey", KeyCode.S,
             "The key that shows and hides the card win rates in the deck tracker during a match.");
     }

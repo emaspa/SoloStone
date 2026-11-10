@@ -730,6 +730,10 @@ M	Assembly-CSharp	Actor	GetPremium	TAG_PREMIUM()
 M	Assembly-CSharp	Actor	GetSpell	*
 M	Assembly-CSharp	Actor	IsColliderEnabled	System.Boolean()
 M	Assembly-CSharp	Actor	IsShown	System.Boolean()
+M	Assembly-CSharp	Actor	SetFullDef	System.Void(DefLoader+DisposableFullDef)
+M	Assembly-CSharp	Actor	SetPremium	System.Void(TAG_PREMIUM)
+M	Assembly-CSharp	Actor	UpdateAllComponents	System.Void(System.Boolean)
+M	Assembly-CSharp	ActorNames	GetHandActor	System.String(EntityDef,TAG_PREMIUM)
 M	Assembly-CSharp	AlertPopup	ButtonPress	*
 M	Assembly-CSharp	AlertPopup	GetInfo	AlertPopup+PopupInfo()
 M	Assembly-CSharp	AlertPopup	Hide	*
@@ -1166,9 +1170,11 @@ M	Assembly-CSharp	DefLoader	GetAllEntityDefs	System.Collections.Generic.Dictiona
 M	Assembly-CSharp	DefLoader	GetCardDef	DefLoader+DisposableCardDef(System.String)
 M	Assembly-CSharp	DefLoader	GetEntityDef	EntityDef(System.Int32,System.Boolean)
 M	Assembly-CSharp	DefLoader	GetEntityDef	EntityDef(System.String)
+M	Assembly-CSharp	DefLoader	GetFullDef	DefLoader+DisposableFullDef(System.String)
 M	Assembly-CSharp	DefLoader	HasLoadedEntityDefs	System.Boolean()
 M	Assembly-CSharp	DefLoader+DisposableCardDef	Dispose	System.Void()
 M	Assembly-CSharp	DefLoader+DisposableCardDef	get_CardDef	CardDef()
+M	Assembly-CSharp	DefLoader+DisposableFullDef	get_EntityDef	EntityDef()
 M	Assembly-CSharp	DialogBase	AddHideListener	System.Void(DialogBase+HideCallback)
 M	Assembly-CSharp	DialogBase	HandleKeyboardInput	()
 M	Assembly-CSharp	DialogBase	Hide	System.Void()
@@ -1215,6 +1221,8 @@ M	Assembly-CSharp	EnemyEmoteHandler	IsSquelched	System.Boolean(System.Int32)
 M	Assembly-CSharp	Entity	GetCard	Card()
 M	Assembly-CSharp	Entity	GetController	Player()
 M	Assembly-CSharp	Entity	GetHero	Entity()
+M	Assembly-CSharp	Entity	GetHeroCard	Card()
+M	Assembly-CSharp	Entity	GetHeroPowerCard	Card()
 M	Assembly-CSharp	Entity	GetPetCard	Card()
 M	Assembly-CSharp	Entity	GetWeaponCard	Card()
 M	Assembly-CSharp	Entity	HasHandTarget	System.Boolean()
@@ -1677,6 +1685,7 @@ M	Assembly-CSharp	InputManager	DropHeldSpellLikeCard	*
 M	Assembly-CSharp	InputManager	Get	InputManager()
 M	Assembly-CSharp	InputManager	GetBattlecrySourceCard	Card()
 M	Assembly-CSharp	InputManager	GetHeldCard	Card()
+M	Assembly-CSharp	InputManager	GetMousedOverCard	Card()
 M	Assembly-CSharp	InputManager	IsInputEnabled	System.Boolean()
 M	Assembly-CSharp	InputManager	PermitDecisionMakingInput	System.Boolean()
 M	Assembly-CSharp	LeagueDbfRecord	get_LeagueLevel	System.Int32()
@@ -2093,8 +2102,10 @@ M	Assembly-CSharp	PetsManager	GetRewardPresenter	Hearthstone.Progression.RewardP
 M	Assembly-CSharp	PetsManager	ShowNextReward	System.Boolean(System.Action)
 M	Assembly-CSharp	PlatformDependentValue`1	op_Implicit	!0(PlatformDependentValue`1<!0>)
 M	Assembly-CSharp	PlayButton	Disable	System.Void(System.Boolean)
+M	Assembly-CSharp	Player	GetHandZone	ZoneHand()
 M	Assembly-CSharp	Player	GetPlayerId	System.Int32()
 M	Assembly-CSharp	Player	GetRank	()
+M	Assembly-CSharp	Player	GetSecretZone	ZoneSecret()
 M	Assembly-CSharp	Player	GetSide	Player+Side()
 M	Assembly-CSharp	Player	UpdateName	*
 M	Assembly-CSharp	PopupDisplayManager	CanShowRankedIntroForNewPlayer	*
@@ -2371,6 +2382,7 @@ M	Assembly-CSharp	UpgradeToGoldenPopup	HandleEvent	(System.String)
 M	Assembly-CSharp	UpgradeToGoldenPopup	HandleEvent	*
 M	Assembly-CSharp	VictoryScreen	JustEarnedHeroReward	*
 M	Assembly-CSharp	VictoryTwoScoop	StopFireworksAudio	System.Void()
+M	Assembly-CSharp	Zone	GetCards	System.Collections.Generic.List`1<Card>()
 M	Assembly-CSharp	Zone	UpdateLayout	System.Void()
 M	Assembly-CSharp	ZoneChange	GetEntity	Entity()
 M	Assembly-CSharp	ZoneChangeList	GetChanges	System.Collections.Generic.List`1<ZoneChange>()
@@ -2484,11 +2496,15 @@ M	UnityEngine.CoreModule	UnityEngine.Material	set_mainTextureScale	System.Void(U
 M	UnityEngine.CoreModule	UnityEngine.MaterialPropertyBlock	SetColor	System.Void(System.String,UnityEngine.Color)
 M	UnityEngine.CoreModule	UnityEngine.MaterialPropertyBlock	SetFloat	System.Void(System.String,System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Abs	System.Single(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Mathf	CeilToInt	System.Int32(System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Clamp	System.Int32(System.Int32,System.Int32,System.Int32)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Clamp	System.Single(System.Single,System.Single,System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Clamp01	System.Single(System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Mathf	FloorToInt	System.Int32(System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Max	System.Int32(System.Int32,System.Int32)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Max	System.Single(System.Single,System.Single)
+M	UnityEngine.CoreModule	UnityEngine.Mathf	Max	System.Single(System.Single[])
+M	UnityEngine.CoreModule	UnityEngine.Mathf	Min	System.Int32(System.Int32,System.Int32)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Min	System.Single(System.Single,System.Single)
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Min	System.Single(System.Single[])
 M	UnityEngine.CoreModule	UnityEngine.Mathf	Round	System.Single(System.Single)
@@ -2916,6 +2932,7 @@ T	Assembly-CSharp	AbsDeckPickerTrayDisplay
 T	Assembly-CSharp	AchievementCategoryDbfRecord		
 T	Assembly-CSharp	AchievementSubcategoryDbfRecord		
 T	Assembly-CSharp	Actor		
+T	Assembly-CSharp	ActorNames		
 T	Assembly-CSharp	AlertPopup		
 T	Assembly-CSharp	AlertPopup+Header		
 T	Assembly-CSharp	AlertPopup+PopupInfo		
@@ -3052,6 +3069,7 @@ T	Assembly-CSharp	DeckTrayPetContent
 T	Assembly-CSharp	DeckTrayReorderableContent		
 T	Assembly-CSharp	DefLoader		
 T	Assembly-CSharp	DefLoader+DisposableCardDef		
+T	Assembly-CSharp	DefLoader+DisposableFullDef		
 T	Assembly-CSharp	DialogBase		
 T	Assembly-CSharp	DialogBase+HideCallback		
 T	Assembly-CSharp	DialogManager		
@@ -3429,8 +3447,10 @@ T	Assembly-CSharp	VisualsFormatType
 T	Assembly-CSharp	Zone		
 T	Assembly-CSharp	ZoneChange		
 T	Assembly-CSharp	ZoneChangeList		
+T	Assembly-CSharp	ZoneHand		
 T	Assembly-CSharp	ZoneMgr		
 T	Assembly-CSharp	ZonePlay		
+T	Assembly-CSharp	ZoneSecret		
 T	Assembly-CSharp	floatyObj		
 T	Assembly-CSharp	floatyObj2		
 T	Blizzard.T5.Core	Blizzard.T5.Core.Map`2		

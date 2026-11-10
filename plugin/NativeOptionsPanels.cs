@@ -414,12 +414,20 @@ internal static class NativeOptionsPanels
                     box => NativeMatchTrackerOptions.Attach(6, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 0, "attackCounter", OptionsPanelText.AttackCounterId, "SoloStoneAttackCounterCheckbox", OptionsPanelText.AttackCounterLabel,
                     box => NativeMatchTrackerOptions.Attach(2, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "secretHelper", OptionsPanelText.SecretHelperId, "SoloStoneSecretHelperCheckbox", OptionsPanelText.SecretHelperLabel,
+                    box => NativeMatchTrackerOptions.Attach(8, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "cardHistory", OptionsPanelText.CardHistoryId, "SoloStoneCardHistoryCheckbox", OptionsPanelText.CardHistoryLabel,
+                    box => NativeMatchTrackerOptions.Attach(10, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 1, "cardArt", OptionsPanelText.CardArtId, "SoloStoneCardArtCheckbox", OptionsPanelText.CardArtLabel,
                     box => NativeMatchTrackerOptions.Attach(3, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 1, "deckStats", OptionsPanelText.DeckStatsId, "SoloStoneDeckStatsCheckbox", OptionsPanelText.DeckStatsLabel,
                     box => NativeMatchTrackerOptions.Attach(4, box), NativeMatchTrackerOptions.Sync);
                 AddCheck(panel, check, 1, "mulliganGuide", OptionsPanelText.MulliganGuideId, "SoloStoneMulliganGuideCheckbox", OptionsPanelText.MulliganGuideLabel,
                     box => NativeMatchTrackerOptions.Attach(5, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "cardChips", OptionsPanelText.CardChipsId, "SoloStoneCardChipsCheckbox", OptionsPanelText.CardChipsLabel,
+                    box => NativeMatchTrackerOptions.Attach(7, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "counterChips", OptionsPanelText.CounterChipsId, "SoloStoneCounterChipsCheckbox", OptionsPanelText.CounterChipsLabel,
+                    box => NativeMatchTrackerOptions.Attach(9, box), NativeMatchTrackerOptions.Sync);
             }
             if (panel.Rows.Count == 0) throw new InvalidOperationException("no rows");
 

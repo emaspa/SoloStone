@@ -123,6 +123,11 @@ row F HistoryManager+BigCardEntry m_finishedCallback # ReflectionBindings table 
 row F HistoryManager m_showingBigCard # ReflectionBindings table row
 site NativeBigCardWatchdog.ResolveAdmissionBindings | Field | HistoryManager.RunFinishedCallbackAndDestroyBigCard (not on this type) # the ReflectionBindings string table of the big-card watchdog, rows above; a miss disables the watchdog
 
+# NativeCardHistory.Spawn
+row M AssetLoader InstantiatePrefab # GetMethods().First(name == InstantiatePrefab && (AssetReference, enum) parameters): the card history's 40% card models; a miss turns the card history off for the session
+site NativeCardHistory.Spawn | Enumerate | (unknown type) # row above: the loader First(...); AssetReference op_Implicit is outside references/game
+site NativeCardHistory.Spawn | Method | (unknown type) # row above: the loader First(...); AssetReference op_Implicit is outside references/game
+
 # NativeCosmeticCheck+<>c__DisplayClass28_0`1.<Asset>b__1
 
 # NativeCosmeticCheck+<Asset>d__28`1.MoveNext
