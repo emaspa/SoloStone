@@ -301,8 +301,8 @@ internal static class NativeProfileSelector
                 m_id = NativeSaveDeleteText.PopupId, m_headerText = NativeSaveDeleteText.Header, m_showAlertIcon = false,
                 m_text = NativeSaveDeleteText.Body(summary.Name, summary.CreatedUtc, summary.Readable, summary.Sandbox, summary.Rank, summary.Gold,
                     summary.Gold >= ProfileCatalog.UnlimitedGold, summary.DeckCount),
-                m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL, m_confirmText = NativeSaveDeleteText.ConfirmLabel,
-                m_cancelText = NativeSaveDeleteText.CancelLabel, m_keyboardEscIsCancel = true,
+                m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL, m_confirmText = NativeStrings.Get("GLUE_COLLECTION_DECK_DELETE", NativeSaveDeleteText.ConfirmLabel).ToUpperInvariant(),
+                m_cancelText = NativeStrings.Get("GLOBAL_CANCEL", NativeSaveDeleteText.CancelLabel).ToUpperInvariant(), m_keyboardEscIsCancel = true,
                 m_responseCallback = (response, data) => { if (response == AlertPopup.Response.CONFIRM) Delete(id); }
             });
         }
@@ -373,7 +373,7 @@ internal static class NativeProfileSelector
         DialogManager.Get()?.ShowPopup(new AlertPopup.PopupInfo {
             m_id = popupId, m_headerText = header ?? "SAVE UNAVAILABLE", m_text = text,
             m_showAlertIcon = true, m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL,
-            m_cancelText = "BACK", m_keyboardEscIsCancel = true
+            m_cancelText = NativeStrings.Get("GLOBAL_BACK", "BACK").ToUpperInvariant(), m_keyboardEscIsCancel = true
         });
     }
 }
@@ -521,15 +521,15 @@ internal sealed class NativeProfileMenu : ButtonListMenu
             if (slot.Unavailable != null) row.SetEnabled(false);
         }
         if (page > 0) Plank("ProfilePrevious", "save.prev", "Previous", _ => { page--; Build(); });
-        if (ProfileMenuGeometry.HasNext(page, slots.Length)) Plank("ProfileNext", "save.next", "Next", _ => { page++; Build(); });
+        if (ProfileMenuGeometry.HasNext(page, slots.Length)) Plank("ProfileNext", "save.next", NativeStrings.Get("GLOBAL_BUTTON_NEXT", "Next"), _ => { page++; Build(); });
         // "+ New save" and "Manage" (or "Done") share a row; manage mode hides "+ New save".
         bool canAdd = !manage && slots.Length < ProfileCatalog.MaximumSlots, canManage = slots.Length > 0 && NativeProfileSelector.ManageAllowed(startup);
         if (slots.Length > 0 && (canAdd || canManage)) Divider();
         UIBButton add = canAdd ? Plank("ProfileAdd", "save.add", "+ New save", _ => StartWizard(slots), !canManage) : null;
-        UIBButton toggle = canManage ? Plank("ProfileManage", NativeSaveDeleteText.ManageId, manage ? NativeSaveDeleteText.DoneLabel : NativeSaveDeleteText.ManageLabel,
+        UIBButton toggle = canManage ? Plank("ProfileManage", NativeSaveDeleteText.ManageId, manage ? NativeStrings.Get("GLOBAL_DONE", NativeSaveDeleteText.DoneLabel) : NativeSaveDeleteText.ManageLabel,
             _ => { manage = !manage; Build(); }, add == null) : null;
         if (add != null && toggle != null) Pair("ProfileManageActions", add, toggle);
-        if (!startup) Plank("ProfileCancel", "save.cancel", "Cancel", _ => Hide());
+        if (!startup) Plank("ProfileCancel", "save.cancel", NativeStrings.Get("GLOBAL_CANCEL", "Cancel"), _ => Hide());
     }
 
     // A locked row's tap does nothing, and ProfileCatalog.Delete refuses the open save regardless.
@@ -576,8 +576,8 @@ internal sealed class NativeProfileMenu : ButtonListMenu
     private void BuildWizard(bool kit)
     {
         // The action pair is made first: its plank is the size unit for every other row.
-        var create = Plank("ProfileCreate", "save.create", "Create", _ => CreateSave(), false);
-        var cancel = Plank("ProfileCreateCancel", "save.cancel", "Cancel", _ => { wizard = false; Build(); }, false);
+        var create = Plank("ProfileCreate", "save.create", NativeStrings.Get("GLOBAL_CREATE", "Create"), _ => CreateSave(), false);
+        var cancel = Plank("ProfileCreateCancel", "save.cancel", NativeStrings.Get("GLOBAL_CANCEL", "Cancel"), _ => { wizard = false; Build(); }, false);
         if (kit) KitScale();
         PegUIElement name = Plate("ProfileName", "Name", saveName, out nameText);
         if (name == null) { Label("ProfileNameLabel", "Save name", LabelColor, 1); var plank = Plank("ProfileName", "save.name", saveName, _ => EditName()); name = plank; nameText = ProfileFormKit.Label(plank); }
@@ -607,7 +607,7 @@ internal sealed class NativeProfileMenu : ButtonListMenu
 
     private void BuildPace(bool kit)
     {
-        var back = Plank("ProfilePaceBack", "save.pace.back", "Back", _ => LeavePace(), false);
+        var back = Plank("ProfilePaceBack", "save.pace.back", NativeStrings.Get("GLOBAL_BACK", "Back"), _ => LeavePace(), false);
         if (kit) KitScale();
         PaceRows(kit, "save.pace.set:", () => LocalLadder.Profile.GrindTier, tier => LocalLadder.Profile.SetGrindTier(tier.Id));
         PaceNote();

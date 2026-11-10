@@ -154,6 +154,7 @@ static partial class Program
             PluginSubsetTests(temp);
             LanguageTests(temp);
             OptionsPanelTests();
+            NativeStringsTests(temp);
             ClientCheckTests(temp);
             Round2Tests(temp,source,bundle,supported,saves);
             BoundaryTests();

@@ -106,8 +106,7 @@ internal static class NativeHomeUI
     private static readonly HashSet<string> shopLabelPaths = new HashSet<string>();
     private static void LabelShop(Box box, Action<string> report)
     {
-        string store = GameStrings.Get("GLUE_BOX_STORE"), shop = GameStrings.Get("GLUE_STORE_OPEN_BUTTON_TEXT");
-        if (string.IsNullOrEmpty(shop) || shop == "GLUE_STORE_OPEN_BUTTON_TEXT") shop = "Shop";
+        string store = GameStrings.Get("GLUE_BOX_STORE"), shop = NativeStrings.Get("GLUE_STORE_OPEN_BUTTON_TEXT", "Shop");
         // The visible caption is the ButtonName beside the button (as NativeShop finds it). Its UberText holds the raw key
         // and localizes at render, so it is matched by place; its generated render child is left to UberText.
         var caption = box.m_StoreButton == null ? null : box.m_StoreButton.transform.parent?.Find("ButtonName");

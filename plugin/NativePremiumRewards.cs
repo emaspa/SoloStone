@@ -216,7 +216,7 @@ internal sealed class NativePremiumRewards : ILocalTierRewardStep
                 + (SabberStoneCore.Model.Cards.FromId(item.Id)?.Name ?? item.Id) + " x" + item.Count))
                 + "\n\nYour cards are already saved.",
             m_showAlertIcon = false, m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL,
-            m_cancelText = "CONTINUE", m_keyboardEscIsCancel = false,
+            m_cancelText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_keyboardEscIsCancel = false,
             m_responseCallback = (response, _) => {
                 if (token != generation || done == null || response != AlertPopup.Response.CANCEL) return;
                 dialog = null; Finish();

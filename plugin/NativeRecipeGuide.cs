@@ -107,7 +107,7 @@ internal sealed class NativeRecipeGuide : MonoBehaviour
             m_headerText = NativeRecipeGuideText.PageHeader(recipe, page),
             m_text = NativeRecipeGuideText.PageBody(recipe, page), m_showAlertIcon = false,
             m_responseDisplay = next ? AlertPopup.ResponseDisplay.CONFIRM_CANCEL : AlertPopup.ResponseDisplay.CANCEL,
-            m_confirmText = "NEXT", m_cancelText = "CLOSE", m_keyboardEscIsCancel = true,
+            m_confirmText = NativeStrings.Get("GLOBAL_BUTTON_NEXT", "NEXT").ToUpperInvariant(), m_cancelText = NativeStrings.Get("GLOBAL_BUTTON_CLOSE", "CLOSE").ToUpperInvariant(), m_keyboardEscIsCancel = true,
             m_responseCallback = (response, data) => {
                 state(false);
                 if (next && response == AlertPopup.Response.CONFIRM)
@@ -126,7 +126,7 @@ internal sealed class NativeRecipeGuide : MonoBehaviour
     {
         DialogManager.Get()?.ShowUniquePopup(new AlertPopup.PopupInfo {
             m_id = "LOCAL_RECIPE_SAVE_ERROR", m_headerText = title, m_text = text, m_showAlertIcon = false,
-            m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL, m_cancelText = "CLOSE", m_keyboardEscIsCancel = true
+            m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL, m_cancelText = NativeStrings.Get("GLOBAL_BUTTON_CLOSE", "CLOSE").ToUpperInvariant(), m_keyboardEscIsCancel = true
         });
     }
 }

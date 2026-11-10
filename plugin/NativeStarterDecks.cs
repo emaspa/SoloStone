@@ -36,7 +36,7 @@ internal static class NativeStarterDecks
             DialogManager.Get()?.ShowUniquePopup(new AlertPopup.PopupInfo {
                 m_id = NativeStarterText.RestorePopupId, m_headerText = NativeStarterText.RestoreHeader, m_text = NativeStarterText.RestoreBody,
                 m_showAlertIcon = false, m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL,
-                m_confirmText = NativeStarterText.RestoreLabel, m_cancelText = NativeStarterText.CancelLabel, m_keyboardEscIsCancel = true,
+                m_confirmText = NativeStarterText.RestoreLabel, m_cancelText = NativeStrings.Get("GLOBAL_CANCEL", NativeStarterText.CancelLabel).ToUpperInvariant(), m_keyboardEscIsCancel = true,
                 m_responseCallback = (response, data) => { if (response == AlertPopup.Response.CONFIRM) Restore(); }
             });
         }

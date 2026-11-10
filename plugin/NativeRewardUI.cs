@@ -188,7 +188,7 @@ internal static class NativeRewardUI
                 m_id = LocalRewardPresentation.NoItemsPopupPrefix + expectedMatch + "_" + expectedGeneration,
                 m_headerText = summaryHeader, m_text = noItemsText, m_showAlertIcon = false,
                 m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL,
-                m_confirmText = "CONTINUE", m_cancelText = LocalRewardPresentation.DetailsCardLabel, m_keyboardEscIsCancel = false,
+                m_confirmText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_cancelText = LocalRewardPresentation.DetailsCardLabel, m_keyboardEscIsCancel = false,
                 m_responseCallback = (response, data) => {
                     if (matchId != expectedMatch || generation != expectedGeneration
                         || phase != LocalRewardPhase.Summary || !CurrentReceipt(expectedMatch)) return;
@@ -212,7 +212,7 @@ internal static class NativeRewardUI
             m_id = LocalRewardPresentation.DetailsPopupPrefix + expectedMatch + "_" + expectedGeneration,
             m_headerText = LocalRewardPresentation.DetailedResultsLabel, m_text = summaryBody, m_showAlertIcon = false,
             m_responseDisplay = continued == null ? AlertPopup.ResponseDisplay.OK : AlertPopup.ResponseDisplay.CONFIRM,
-            m_okText = "BACK", m_confirmText = "CONTINUE", m_keyboardEscIsCancel = false,
+            m_okText = NativeStrings.Get("GLOBAL_BACK", "BACK").ToUpperInvariant(), m_confirmText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_keyboardEscIsCancel = false,
             m_responseCallback = (response, data) => {
                 if (attempt != detailsAttempt) return;
                 detailsPopup = false;
@@ -447,7 +447,7 @@ internal static class NativeRewardUI
             m_headerText = "REWARDS SAVED",
             m_text = LocalRewardPresentation.TierRewardText(receipt.TierRewards) + "\n\nYour rewards are already in your profile.",
             m_showAlertIcon = false, m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL,
-            m_cancelText = "CONTINUE", m_keyboardEscIsCancel = false,
+            m_cancelText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_keyboardEscIsCancel = false,
             m_responseCallback = (response, data) => { if (response == AlertPopup.Response.CANCEL) continued(); }
         };
         return DialogManager.Get() != null && DialogManager.Get().ShowUniquePopup(info);
@@ -1162,7 +1162,7 @@ internal static class NativeRewardUI
             m_id = LocalRewardSafety.FallbackPopupPrefix + matchId + "_" + generation,
             m_headerText = "REWARDS SAVED", m_text = exact, m_showAlertIcon = false,
             m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL,
-            m_confirmText = "TRY ANIMATION AGAIN", m_cancelText = "CONTINUE", m_keyboardEscIsCancel = false,
+            m_confirmText = "TRY ANIMATION AGAIN", m_cancelText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_keyboardEscIsCancel = false,
             m_responseCallback = (response, data) => {
                 if (matchId != expectedMatch || generation != expectedGeneration || phase != LocalRewardPhase.NativeFallback) return;
                 fallbackPopup = false;

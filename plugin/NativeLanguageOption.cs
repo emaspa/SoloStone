@@ -102,7 +102,7 @@ internal static class NativeLanguageOption
             {
                 info.m_text = GameLanguage.SwitchBody(running, offer);
                 info.m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL;
-                info.m_confirmText = GameLanguage.SwitchLabel; info.m_cancelText = GameLanguage.CancelLabel;
+                info.m_confirmText = GameLanguage.SwitchLabel; info.m_cancelText = NativeStrings.Get("GLOBAL_CANCEL", GameLanguage.CancelLabel).ToUpperInvariant();
                 info.m_responseCallback = (response, data) => { if (response == AlertPopup.Response.CONFIRM) Choose(offer); };
             }
             DialogManager.Get()?.ShowUniquePopup(info);

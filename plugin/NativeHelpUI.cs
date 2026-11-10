@@ -131,7 +131,7 @@ internal static class NativeHelpUI
                 m_id = NativeHelpText.PopupId, m_headerText = NativeHelpText.Header, m_text = NativeHelpText.Body,
                 m_showAlertIcon = false, m_iconSet = AlertPopup.PopupInfo.IconSet.None,
                 m_responseDisplay = AlertPopup.ResponseDisplay.CONFIRM_CANCEL,
-                m_confirmText = NativeHelpText.DiscordLabel, m_cancelText = NativeHelpText.CloseLabel, m_keyboardEscIsCancel = true,
+                m_confirmText = NativeHelpText.DiscordLabel, m_cancelText = NativeStrings.Get("GLOBAL_OKAY", NativeHelpText.CloseLabel), m_keyboardEscIsCancel = true,
                 m_responseCallback = (response, data) => { if (response == AlertPopup.Response.CONFIRM) OpenDiscord(); }
             });
         }

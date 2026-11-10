@@ -276,7 +276,7 @@ internal sealed class LocalAchievementFeats
         int combined = LocalCoreProgression.NeutralBaseCombinedLevel + LocalCoreProgression.Heroes.Sum(hero => LocalCoreProgression.Level(xp[hero]) - 1);
         for (int index = 0; index <= LocalCoreProgression.Heroes.Length; index++) {
             string hero = index < LocalCoreProgression.Heroes.Length ? LocalCoreProgression.Heroes[index] : "";
-            string name = hero == "" ? "All classes" : LocalCoreProgression.ClassName(hero);
+            string name = hero == "" ? "All classes" : NativeStrings.ClassName(LocalCoreProgression.ClassName(hero));
             var levels = new List<LocalFeat>();
             foreach (var group in LocalCoreProgression.Unlocks.Where(row => row.Hero == hero).GroupBy(row => hero == "" ? Math.Max(LocalCoreProgression.NeutralBaseCombinedLevel, row.Threshold) : row.Threshold)) {
                 int level = group.Key;
@@ -368,7 +368,7 @@ internal sealed class LocalAchievementFeats
                 mastery.Add(feat);
             }
             AddTrack(categories.Single(row => row.Id == "collection"), all, 12 + index, "mastery:" + index,
-                (hero == null ? "Neutral" : LocalCoreProgression.ClassName(hero)), "Card Mastery", mastery);
+                (hero == null ? NativeStrings.Get("GLOBAL_CLASS_NEUTRAL", "Neutral") : NativeStrings.ClassName(LocalCoreProgression.ClassName(hero))), "Card Mastery", mastery);
         }
         foreach (var feat in all.Where(row => !row.Generated && !row.Earned)) {
             int premium = feat.Id == "first-signature-mastery" ? 3 : feat.Id == "first-diamond-mastery" ? 2 : feat.Id == "fifty-golden-masteries" ? 1 : 0;

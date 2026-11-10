@@ -20,7 +20,8 @@ using UnityEngine;
 // Entry point: the native drawer Journal button (relabelled "Feats", NativeHomeUI) opens Feats instead of the retail Journal.
 internal static class NativeAchievements
 {
-    internal const string HomeId = "home.feats", ButtonLabel = "Feats";
+    internal const string HomeId = "home.feats";
+    internal static string ButtonLabel => NativeStrings.Get("GLUE_PROGRESSION_ACHIEVEMENTS_TITLE", "Feats");
     internal const string TooltipBody = "Your achievements, points and rewards.";
     // JournalButton.popupAssetReference of the pinned client.
     internal const string JournalPrefab = "JournalPopup.prefab:b61d6e9bd58789647a62494cf92fb93e";

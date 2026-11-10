@@ -135,7 +135,7 @@ internal static class NativeWelcomeUI
         var info = new AlertPopup.PopupInfo {
             m_id = NativeWelcomeText.PopupId, m_headerText = NativeWelcomeText.Header, m_text = NativeWelcomeText.Body,
             m_showAlertIcon = false, m_iconSet = AlertPopup.PopupInfo.IconSet.None,
-            m_responseDisplay = AlertPopup.ResponseDisplay.OK, m_okText = NativeWelcomeText.OkLabel,
+            m_responseDisplay = AlertPopup.ResponseDisplay.OK, m_okText = NativeStrings.Get("GLOBAL_OKAY", NativeWelcomeText.OkLabel),
             m_responseCallback = (response, data) => Acknowledged(profile)
         };
         if (!dialogs.ShowUniquePopup(info)) return false;

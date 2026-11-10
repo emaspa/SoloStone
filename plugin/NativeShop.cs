@@ -1810,14 +1810,14 @@ internal static class NativeShop
             }
         };
         // Cards: packs only.
-        category(NativeShopTabs.Cards, "Cards", NativeShopTabs.Icon(NativeShopTabs.Cards));
-        begin("packs", "Packs");
+        category(NativeShopTabs.Cards, NativeStrings.Get("GLUE_STORE_MODE_CARDS", "Cards"), NativeShopTabs.Icon(NativeShopTabs.Cards));
+        begin("packs", NativeStrings.Get("GLUE_BOX_PACKS", "Packs"));
         section("local-packs", "Local packs", "", offered.Where(p => p.Kind == "Pack"));
         var shopRecipes = LocalShop.Default.Recipes; // One clone of the library per catalogue build.
         foreach (var part in new[] { Tuple.Create(NativeShopTabs.Decks1, "Decks I"), Tuple.Create(NativeShopTabs.Decks2, "Decks II") }) {
             category(part.Item1, part.Item2, NativeShopTabs.Icon(part.Item1));
             foreach (var hero in NativeShopTabs.DeckClasses.Where(c => c.Tab == part.Item1)) {
-                begin(hero.Id, hero.Label);
+                begin(hero.Id, NativeStrings.ClassName(hero.Label));
                 foreach (var group in new[] { Tuple.Create("meta", "Meta"), Tuple.Create("fan", "Fan favourite") })
                     section("local-decks-" + hero.Hero.ToLowerInvariant() + "-" + group.Item1, group.Item2, NativeShopLayout.DeckRowStyle,
                         NativeShopDecks.ShopOrder(shopRecipes.Where(r => r.Hero == hero.Hero && r.Tag == group.Item1))
@@ -1829,13 +1829,13 @@ internal static class NativeShop
         category(NativeShopTabs.Skins, "Skins", NativeShopTabs.Icon(NativeShopTabs.Skins));
         begin("hero_skins", "Hero Skins");
         foreach (var hero in NativeShopTabs.DeckClasses)
-            section("local-skins-" + hero.Hero.ToLowerInvariant(), hero.Label, "standardsingle", offered.Where(p => p.Kind == "HeroSkin" && p.Class == hero.Hero));
-        begin("card_backs", "Card Backs");
-        section("local-card-backs", "Card Backs", "standardsingle", offered.Where(p => p.Kind == "CardBack"));
-        begin("coin_list", "Coins");
-        section("local-coins", "Coins", "standardsingle", offered.Where(p => p.Kind == "Coin"));
+            section("local-skins-" + hero.Hero.ToLowerInvariant(), NativeStrings.ClassName(hero.Label), "standardsingle", offered.Where(p => p.Kind == "HeroSkin" && p.Class == hero.Hero));
+        begin("card_backs", NativeStrings.Get("GLUE_COLLECTION_MANAGER_CARD_BACKS_TITLE", "Card Backs"));
+        section("local-card-backs", NativeStrings.Get("GLUE_COLLECTION_MANAGER_CARD_BACKS_TITLE", "Card Backs"), "standardsingle", offered.Where(p => p.Kind == "CardBack"));
+        begin("coin_list", NativeStrings.Get("GLUE_COLLECTION_MANAGER_COINS_TITLE", "Coins"));
+        section("local-coins", NativeStrings.Get("GLUE_COLLECTION_MANAGER_COINS_TITLE", "Coins"), "standardsingle", offered.Where(p => p.Kind == "Coin"));
         var pets = offered.Where(p => p.Kind == "Pet").ToArray();
-        begin("pet_list", "Pets");
+        begin("pet_list", NativeStrings.Get("GLUE_COLLECTION_MANAGER_PET_TITLE", "Pets"));
         section("local-pets-owned", "No pet", "standardsingle", pets.Where(p => p.Price == 0));
         section("local-pets-sale", "Pets — 5,000 gold each", "standardsingle", pets.Where(p => p.Price != 0));
         // Themes: game boards, main-menu themes. "Random owned" leads each; free looks follow, then the ones for sale.

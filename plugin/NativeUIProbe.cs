@@ -1423,7 +1423,7 @@ internal static partial class NativeUIProbe
             LocalCustomDeck custom = Profile.GetDraft(native.ID);
             if (custom != null && !Profile.IsDeckComplete(custom.Id)) {
                 DialogManager.Get()?.ShowPopup(new AlertPopup.PopupInfo {
-                    m_headerText = "Incomplete deck", m_text = "Acquire missing cards and complete this deck before playing.",
+                    m_headerText = NativeStrings.Get("GLUE_INCOMPLETE_DECK_HEADER", "Incomplete deck"), m_text = "Acquire missing cards and complete this deck before playing.",
                     m_responseDisplay = AlertPopup.ResponseDisplay.OK
                 });
                 return;

@@ -171,7 +171,7 @@ internal sealed class NativeTierRewardStep : ILocalTierRewardStep
         return DialogManager.Get() != null && DialogManager.Get().ShowUniquePopup(new AlertPopup.PopupInfo {
             m_id = popupId, m_headerText = header, m_text = text,
             m_showAlertIcon = false, m_responseDisplay = AlertPopup.ResponseDisplay.CANCEL,
-            m_cancelText = "CONTINUE", m_keyboardEscIsCancel = false,
+            m_cancelText = NativeStrings.Get("GLOBAL_CONTINUE", "CONTINUE").ToUpperInvariant(), m_keyboardEscIsCancel = false,
             m_responseCallback = (response, data) => {
                 if (response != AlertPopup.Response.CANCEL || done == null || token != generation || !popup || popupId != expectedId) return;
                 popup = false; popupId = null;

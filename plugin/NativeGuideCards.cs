@@ -203,7 +203,7 @@ internal static class NativeGuideCards
             close.name = "SoloStoneGuideClose";
             close.ClearEventListeners();
             close.BubbleUpEvent = "";
-            close.SetText("CLOSE");
+            close.SetText(NativeStrings.Get("GLOBAL_BUTTON_CLOSE", "CLOSE").ToUpperInvariant());
             close.SetEnabled(true);
             close.AddEventListener(UIEventType.RELEASE, _ => { page.Advance = false; popup.Hide(); });
             var shift = camera.transform.right * (box.size.x * .6f);
@@ -237,7 +237,7 @@ internal static class NativeGuideCards
                 {
                     page.Appeared = true;
                     var ok = popup.m_okayButton;
-                    ok.SetText(page.Next ? "NEXT" : "CLOSE");
+                    ok.SetText(page.Next ? NativeStrings.Get("GLOBAL_BUTTON_NEXT", "NEXT").ToUpperInvariant() : NativeStrings.Get("GLOBAL_BUTTON_CLOSE", "CLOSE").ToUpperInvariant());
                     foreach (var panel in popup.GetComponentsInChildren<CardListPanel>(true))
                         if (panel.gameObject.activeInHierarchy)
                         {

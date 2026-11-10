@@ -360,7 +360,7 @@ internal sealed class NativeReportMenu : ButtonListMenu
         if (NativeReportUI.PreviewPending)
         {
             Row("report.save", NativeReportText.SaveLabel, NativeReportUI.Save);
-            Row("report.back", NativeReportText.BackLabel, NativeReportUI.Back);
+            Row("report.back", NativeStrings.Get("GLOBAL_BACK", NativeReportText.BackLabel).ToUpperInvariant(), NativeReportUI.Back);
         }
         else if (NativeReportUI.CanExport || NativeReportUI.Exporting)
             Row("report.export", NativeReportUI.Exporting ? "Preparing..." : NativeReportText.PreviewLabel, NativeReportUI.Export,
@@ -368,7 +368,7 @@ internal sealed class NativeReportMenu : ButtonListMenu
         Row("report.discord", NativeReportText.DiscordLabel, NativeReportUI.Discord, NativeReportText.DiscordEnabled);
         Text(NativeReportUI.Status, toggle);
         if (NativeReportUI.CopyVisible) Row("report.copy-path", "COPY PATH", NativeReportUI.CopyPath);
-        Row("report.close", "CLOSE", NativeReportUI.Close);
+        Row("report.close", NativeStrings.Get("GLOBAL_BUTTON_CLOSE", "CLOSE").ToUpperInvariant(), NativeReportUI.Close);
     }
     public override void Show(bool playSound = true)
     {
