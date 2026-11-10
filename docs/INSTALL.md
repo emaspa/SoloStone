@@ -125,8 +125,9 @@ yours, the SoloStone version, update status, **Play**, **Roll back**, the update
 
 ## SoloStone settings in Options
 
-The game's **Options** has an extra button in its Other group: **SoloStone Options**. It opens a window like the one
-**Sound Options** opens. **Back** or Escape returns to Options, and **Done** or a click outside the window closes it.
+The game's **Options** has two extra buttons in its Other group: **SoloStone Options** and **Tracker Options**. Each
+opens a window like the one **Sound Options** opens. **Back** or Escape returns to Options, and **Done** or a click
+outside the window closes it.
 
 **SoloStone Options** holds these. Turn Timer and NPC Deck Guess take effect from the next match; the others change at
 once.
@@ -138,6 +139,9 @@ once.
 - **Pace: <tier>** opens the Pace page, and its **Back** returns to this window. The button is hidden during a match.
 - **Language: <name>** is covered under "Game language" below.
 - **Restore Starter Decks** appears only while you have a starter deck hidden.
+
+**Tracker Options** turns the three match overlays on and off: Countdown, Deck Tracker and Attack Counter. A change
+applies at once.
 
 The settings are saved in `BepInEx\config\solostone.plugin.cfg` in the copy.
 
@@ -177,8 +181,8 @@ Three overlays show during a match:
 - **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
   is on. On by default.
 
-The T key hides and shows all three. To turn one off for good, set `DeckTracker`, `AttackCounter` or `TurnCountdown`
-under `[Display]` in `BepInEx\config\solostone.plugin.cfg` in the copy to `false`. `DeckTrackerKey` changes the key.
+The T key hides and shows all three during a match. To turn one off, use **Tracker Options** in Options.
+`DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.
 
 ## What SoloStone leaves alone
 

@@ -267,8 +267,9 @@ public sealed class OfflineProbe : BaseUnityPlugin
         MatchOverlay.Initialize(Logger, Config);
         NativeMatchTracker.Initialize(Logger);
         NativeTurnClock.Initialize(Logger);
+        NativeMatchTrackerOptions.Initialize(Logger);
         NativeLanguageOption.Initialize(Logger, Config);
-        // SoloStone Options: the Options plank and the panels holding the controls above.
+        // SoloStone Options and Tracker Options: the two Options planks and the panels holding the controls above.
         NativeOptionsPanels.Initialize(harmony, Logger);
         NativeReportUI.Initialize(harmony, Logger, launch);
 #if !SOLOSTONE_RELEASE

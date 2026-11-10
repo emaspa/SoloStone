@@ -1,23 +1,25 @@
 using System;
 using System.Collections.Generic;
 
-// Options > SoloStone Options (NativeOptionsPanels): ids, copy and the layout arithmetic. Pure (no Unity types),
+// Options > SoloStone Options and Tracker Options (NativeOptionsPanels): ids, copy and the layout arithmetic. Pure (no Unity types),
 // so the launcher tests check it. Coordinates are distances along the screen's right and up axes (y grows upward), the space
 // ProfileFormKit.Span measures in; a rect's X/Y is its left/bottom corner.
 internal static class OptionsPanelText
 {
-    internal const string SoloStoneKey = "solostone";
-    internal const string SoloStoneButton = "SoloStone Options";
-    internal const string SoloStoneTitle = "SoloStone Options";
-    internal const string SoloStoneButtonId = "options.solostone";
-    internal const string SoloStoneButtonObject = "SoloStoneOptionsButton";
-    internal const string HandheldId = "options.handheld";
-    // Panel keys only name the one panel; an id is built from the key, so a later panel gets its own ids.
-    internal static string ButtonId(string panel) => "options." + panel;
+    internal const string SoloStoneKey = "solostone", TrackerKey = "tracker";
+    internal const string SoloStoneButton = "SoloStone Options", TrackerButton = "Tracker Options";
+    internal const string SoloStoneTitle = "SoloStone Options", TrackerTitle = "Tracker Options";
+    internal const string SoloStoneButtonId = "options.solostone", TrackerButtonId = "options.tracker";
+    internal const string SoloStoneButtonObject = "SoloStoneOptionsButton", TrackerButtonObject = "SoloStoneTrackerOptionsButton";
+    internal const string HandheldId = "options.handheld", CountdownId = "options.countdown", DeckTrackerId = "options.deck-tracker",
+        AttackCounterId = "options.attack-counter";
+    // The countdown only runs while the Turn Timer does (NativeTurnClock), so its label says so.
+    internal const string CountdownLabel = "Countdown\n(with Turn Timer)", DeckTrackerLabel = "Deck Tracker", AttackCounterLabel = "Attack Counter";
+    internal static string ButtonId(string panel) => panel == SoloStoneKey ? SoloStoneButtonId : TrackerButtonId;
     internal static string BackId(string panel) => ButtonId(panel) + ".back";
     internal static string DoneId(string panel) => ButtonId(panel) + ".done";
     internal static string DismissId(string panel) => ButtonId(panel) + ".dismiss";
-    internal static string Title(string panel) => SoloStoneTitle;
+    internal static string Title(string panel) => panel == SoloStoneKey ? SoloStoneTitle : TrackerTitle;
 }
 
 internal struct PanelRect
@@ -102,20 +104,21 @@ internal static class OptionsPanelLayout
         return plan;
     }
 
-    // Options' Other group: where the SoloStone Options plank may go, best first. `shake` is Disable Screen Shake, `above` the
-    // hidden spectator row over it (its native slot), `slot` the hidden Miscellaneous plank under it (null when the client has
-    // none), `plank` the plank's size. "below": in Miscellaneous's slot under Screen Shake. "above": in the spectator slot over
-    // Screen Shake. The plank never comes closer to Screen Shake than a tenth of its height.
-    internal const float ShakeGap = .1f;
-    internal static List<KeyValuePair<string, PanelRect>> ButtonSlots(PanelRect shake, PanelRect above, PanelRect? slot, float plankWidth, float plankHeight)
+    // Options' Other group: where the two planks may go, best first. `shake` is Disable Screen Shake, `above` the hidden spectator
+    // row over it (its native slot), `slot` the hidden Miscellaneous plank under it (null when the client has none), `plank` the
+    // size of one of our planks. "below": both under Screen Shake, the first in Miscellaneous's slot. "around": the first in the
+    // spectator slot over Screen Shake, the second in Miscellaneous's slot. A plank never comes closer to Screen Shake than a
+    // tenth of its height, and the two are a quarter of a height apart.
+    internal const float ShakeGap = .1f, PlankGap = .25f;
+    internal static List<KeyValuePair<string, PanelRect[]>> ButtonSlots(PanelRect shake, PanelRect above, PanelRect? slot, float plankWidth, float plankHeight)
     {
         float x = (slot ?? shake).CenterX - plankWidth / 2;
         float under = Math.Min(slot?.CenterY ?? shake.Y - plankHeight, shake.Y - plankHeight * ShakeGap - plankHeight / 2);
         float over = Math.Max(above.CenterY, shake.Top + plankHeight * ShakeGap + plankHeight / 2);
         PanelRect At(float middle) => new PanelRect(x, middle - plankHeight / 2, plankWidth, plankHeight);
-        return new List<KeyValuePair<string, PanelRect>> {
-            new KeyValuePair<string, PanelRect>("below", At(under)),
-            new KeyValuePair<string, PanelRect>("above", At(over))
+        return new List<KeyValuePair<string, PanelRect[]>> {
+            new KeyValuePair<string, PanelRect[]>("below", new[] { At(under), At(under - plankHeight * (1 + PlankGap)) }),
+            new KeyValuePair<string, PanelRect[]>("around", new[] { At(over), At(under) })
         };
     }
 }
