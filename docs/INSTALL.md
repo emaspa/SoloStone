@@ -125,8 +125,9 @@ yours, the SoloStone version, update status, **Play**, **Roll back**, the update
 
 ## SoloStone settings in Options
 
-The game's **Options** has an extra button in its Other group: **SoloStone Options**. It opens a window like the one
-**Sound Options** opens. **Back** or Escape returns to Options, and **Done** or a click outside the window closes it.
+The game's **Options** has two extra buttons in its Other group: **SoloStone Options** and **Tracker Options**. Each
+opens a window like the one **Sound Options** opens. **Back** or Escape returns to Options, and **Done** or a click
+outside the window closes it.
 
 **SoloStone Options** holds these. Turn Timer and NPC Deck Guess take effect from the next match; the others change at
 once.
@@ -138,6 +139,10 @@ once.
 - **Pace: <tier>** opens the Pace page, and its **Back** returns to this window. The button is hidden during a match.
 - **Language: <name>** is covered under "Game language" below.
 - **Restore Starter Decks** appears only while you have a starter deck hidden.
+
+**Tracker Options** turns the match overlays on and off. One column has Countdown, Deck Tracker, Opponent Tracker,
+Attack Counter, Secret Helper and Card History. The other has the deck tracker's Card Art, Deck Stats and Mulligan
+Guide, then Hand Chips and Counter Chips. A change applies at once.
 
 The settings are saved in `BepInEx\config\solostone.plugin.cfg` in the copy.
 
@@ -164,6 +169,75 @@ Your copy has the languages your Hearthstone had when you ran setup, usually jus
 
 The new copy has the languages Battle.net left installed. If Battle.net removed your old language, SoloStone starts
 in the new one. You can switch Battle.net back afterwards: the copy keeps the files it was made with.
+
+## Match overlays
+
+These overlays show during a match:
+
+- **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
+  counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
+  Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. On by default.
+- **Opponent Tracker** lists the opponent's cards you have seen down the left edge: cards from their deck that they
+  played, summoned or discarded, or that were revealed some other way, with how many copies. Cards they created during
+  the match and played come in a separate "Created" list. The line under their name gives their class and how many
+  cards are in their hand and deck. It shows only what the game showed you, so a Secret appears once it triggers and
+  nothing in their hand is listed. On by default.
+- **Attack Counter** shows how much damage each side's characters can still attack for this turn, or could on its
+  next turn: left of your hero, under the opponent's portrait. Off by default.
+- **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
+  is on. On by default.
+- **Hand Chips** puts a chip under each card in the opponent's hand: a letter for how it got there and the round it
+  came in. T3 is their draw at the start of round 3, D3 a card drawn by another card, C3 a card they created, R3 a
+  card returned to their hand. K and M mark their opening hand, kept or got in the mulligan, and Coin is the Coin.
+  The chip turns red when the card is Temporary. Hover a chip to read which card drew, created or returned it, if you
+  saw that card. On by default.
+- **Counter Chips** puts a chip on a hero power that was Imbued, with how many times, and beside a quest or sidequest
+  with its progress. On by default.
+- **Secret Helper** lists the Secrets the opponent's class could have, left of their hero, while they have one hidden.
+  Before each of your actions the game tries that action against every candidate. When a candidate would have gone off and
+  their Secret stayed hidden, it is crossed out. Hover a name for its text. If every candidate is crossed out, the
+  Secret came from another class. On by default.
+- **Card History** applies to cards that resurrect minions that died, recast the spells you cast, or repeat the
+  Battlecries you played. Hovering one shows the cards it would draw on so far, at 40% size, beside it. It reads
+  the card's text, so an unusual wording may show nothing. On by default.
+
+The chips, the attack counter and the countdown share one style: a dark pill with a gold edge.
+
+The T key hides and shows all of them during a match. To turn one off, use **Tracker Options** in Options.
+`DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.
+
+### Deck stats
+
+Each finished match saves, in your profile, which of your cards you were offered and kept in the mulligan, your hand
+after it, and which cards you drew and played, along with the opponent's class. Matches from before this version
+count toward a deck's wins and losses but not toward its card win rates.
+
+With **Deck Stats** on, the deck tracker shows the deck's record under its name, such as "12–7 · 63%   vs Mage 3–1"
+for the class you're facing. Press S during a match to add three win rate columns to each card:
+
+- **Mulligan**: games where the card was in your hand after the mulligan.
+- **Drawn**: games where you drew it at any point, your opening hand included.
+- **Played**: games where you played it.
+
+A game counts once per card, however many copies you drew or played. Rates are green above 50% and red below. A dash
+means no games yet. `DeckStatsKey` under `[Display]` changes the S key.
+
+With **Mulligan Guide** on, each card offered in the mulligan gets a box under it: how many times you kept it out of the
+times it was offered, and your win rate with it in your opening hand.
+
+### Stats screen
+
+The **Stats** button sits after **Collection** in the main screen's bottom drawer. It lists every deck you've finished
+a match with, most played first. Pick one to see:
+
+- its record, split into Ranked and Casual;
+- its record against each opponent class;
+- each card's Mulligan, Drawn and Played win rates, which match the tracker's S columns, plus how often you kept it
+  when it was offered and how many games you played it in;
+- its last 10 games, with the opponent, the length in turns, the mode and the date.
+
+The screen reads the same match history as the tracker, so it shows data even with **Deck Stats** turned off. Press
+Close or Escape to leave.
 
 ## What SoloStone leaves alone
 

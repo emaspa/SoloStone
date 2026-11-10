@@ -12,7 +12,7 @@ using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
 
 // Observation memory contains definitions seen by this player, never a hidden-zone snapshot.
-internal sealed class OwnDeckLedger
+internal sealed partial class OwnDeckLedger
 {
     // CloneExact shares immutable fact objects but intentionally drops presentation history.
     private static readonly ConditionalWeakTable<HistoryFact, Dictionary<int, OwnDeckLedger>> observations
@@ -27,12 +27,14 @@ internal sealed class OwnDeckLedger
         Dictionary<long, string> moveDefinitions, HashSet<long> neutralTransforms)
     { this.first = first; this.last = last; this.owner = owner; this.definitions = definitions; this.moveDefinitions = moveDefinitions; this.neutralTransforms = neutralTransforms; }
 
-    internal static OwnDeckLedger Observe(EngineGame game, EngineController player, OwnDeckLedger previous)
+    // shared: false keeps this observation out of the per-fact memory the NPC's views read and write (the deck tracker
+    // observes on the player's frame timing, which must never change what a search inherits).
+    internal static OwnDeckLedger Observe(EngineGame game, EngineController player, OwnDeckLedger previous, bool shared = true)
     {
         var facts = game.HistoryFacts.Query.Events<HistoryFact>().ToArray();
         var first = facts.FirstOrDefault();
         var last = facts.LastOrDefault();
-        Dictionary<int, OwnDeckLedger> remembered = last == null ? null : observations.GetValue(last, _ => new Dictionary<int, OwnDeckLedger>());
+        Dictionary<int, OwnDeckLedger> remembered = !shared || last == null ? null : observations.GetValue(last, _ => new Dictionary<int, OwnDeckLedger>());
         OwnDeckLedger inherited = null;
         if (remembered != null) lock (remembered) remembered.TryGetValue(player.Id, out inherited);
         if (previous == null || !ReferenceEquals(previous.first, first) || previous.owner != player.Id
