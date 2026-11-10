@@ -205,6 +205,7 @@ internal static class DeckLayout
         var dialogs = DialogManager.Get();
         Component root = options != null && options.IsShown() ? options
             : sound != null && sound.IsShown() ? sound
+            : NativeOptionsPanels.ShownRoot != null ? NativeOptionsPanels.ShownRoot
             : game != null && game.GameMenuIsShown() ? game
             : dialogs != null ? CurrentDialog?.GetValue(dialogs) as AlertPopup : null;
         if (root == null) { if (menuText.Count != 0) RestoreMenus(); return; }

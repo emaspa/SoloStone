@@ -153,8 +153,10 @@ internal static class NativeProfileSelector
         return null;
     }
 
-    private static bool BeforeEscape(ref bool __result)
+    // HarmonyX runs every prefix: a key an earlier one took (NativeReportUI) is not handled again.
+    private static bool BeforeEscape(ref bool __result, bool __runOriginal)
     {
+        if (!__runOriginal) return false;
         if (popup == null || !popup.HandleEscape()) return true;
         __result = true; return false;
     }

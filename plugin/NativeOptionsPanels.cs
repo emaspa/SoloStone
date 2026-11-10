@@ -83,6 +83,8 @@ internal static class NativeOptionsPanels
     private static bool paceFromPanel;
 
     internal static UIBButton SoloStoneButton => soloButton != null && soloButton.gameObject.activeInHierarchy ? soloButton : null;
+    // The open panel's root, for Handheld UI's larger menu text (DeckLayout.TickMenus); null when none is on screen.
+    internal static Transform ShownRoot => solo != null && solo.Shown && solo.Root != null && solo.Root.activeInHierarchy ? solo.Root.transform : null;
     // A panel row's control is on screen (for the State helpers of the classes that own them).
     internal static bool OnScreen(Component control) => control != null && control.gameObject.activeInHierarchy && PanelOf(control)?.Shown == true;
 
@@ -213,12 +215,16 @@ internal static class NativeOptionsPanels
         return names;
     }
 
-    // What the plank in the Other group must clear, in release builds too: the native rows still shown.
+    // What the plank in the Other group must clear, in release builds too: the native rows still shown. Placement and the test-control
+    // state both check this list, so a slot the log calls clear is clear in state.optionsPanels too.
     internal static List<KeyValuePair<string, Component>> Obstacles(OptionsMenu options) => new List<KeyValuePair<string, Component>> {
         Pair("signature", options.m_signatureTextDisplayDropdown), Pair("frameRate", options.m_graphicsFps), Pair("fullscreen", options.m_fullScreenCheckbox),
         Pair("resolution", options.m_graphicsRes), Pair("quality", options.m_graphicsQuality), Pair("masterVolume", options.m_masterVolume),
-        Pair("musicVolume", options.m_musicVolume), Pair("soundOptions", options.m_soundOptionsButton), Pair("screenShake", options.m_screenShakeCheckbox)
+        Pair("musicVolume", options.m_musicVolume), Pair("soundOptions", options.m_soundOptionsButton), Pair("screenShake", options.m_screenShakeCheckbox),
+        Pair("versionLabel", VersionLabel?.GetValue(options) as Component)
     };
+    // UberText's assembly is not referenced here, so the field is read by name (as NativeOptionsPace).
+    private static readonly FieldInfo VersionLabel = AccessTools.Field(typeof(OptionsMenu), "m_versionLabel");
     private static KeyValuePair<string, Component> Pair(string name, Component row) => new KeyValuePair<string, Component>(name, row);
 
     // ---- Opening, closing, returning.
@@ -285,8 +291,10 @@ internal static class NativeOptionsPanels
 
     private static void Hide(Panel panel)
     {
+        bool shown = panel.Shown;
         panel.Shown = false;
-        if (panel.Root == null || !panel.Root.activeSelf) return;
+        // Show set the game's dialog flag; a root destroyed or switched off by something else still clears it.
+        if (panel.Root == null || !panel.Root.activeSelf) { if (shown) UniversalInputManager.Get()?.SetGameDialogActive(false); return; }
         UniversalInputManager.Get()?.SetGameDialogActive(false);
         panel.Root.SetActive(false);
     }
@@ -296,8 +304,10 @@ internal static class NativeOptionsPanels
     // Done and a click outside: like native Sound Options, the panel goes and Options stays hidden (alive, for the next open).
     private static void Close(Panel panel) => Hide(panel);
 
-    private static bool BeforeEscape(ref bool __result)
+    // HarmonyX runs every prefix, so one that already took the key (the Pace page's Escape brings this panel back) leaves it alone.
+    private static bool BeforeEscape(ref bool __result, bool __runOriginal)
     {
+        if (!__runOriginal) return false;
         try
         {
             foreach (var panel in new[] { solo })
@@ -470,7 +480,7 @@ internal static class NativeOptionsPanels
     private static void TickPanel(Panel panel)
     {
         if (panel == null || !panel.Shown) return;
-        if (panel.Root == null || !panel.Root.activeInHierarchy) { panel.Shown = false; return; } // Destroyed or hidden by something else.
+        if (panel.Root == null || !panel.Root.activeInHierarchy) { Hide(panel); return; } // Destroyed or hidden by something else.
         try
         {
             if (panel.Settled && Signature(panel) == panel.Visible) return;
@@ -667,8 +677,7 @@ internal static class NativeOptionsPanels
             Camera view = CameraUtils.FindFirstByLayerMask(1 << button.gameObject.layer);
             if (view == null) return node;
             node["rect"] = Normalized(DeckLayout.ScreenRect(button.gameObject, view));
-            node["overlaps"] = TestControlProtocol.List(NativeFpsCounter.Overlaps(options, button, NativeOptionsPace.Rows(options), out bool measured, soloButton)
-                .Where(name => name != "otherPane").Cast<object>());
+            node["overlaps"] = TestControlProtocol.List(NativeFpsCounter.Overlaps(options, button, Obstacles(options), out bool measured, soloButton).Cast<object>());
             node["measured"] = measured;
         }
         catch (Exception error) { node["error"] = error.Message; }

@@ -139,8 +139,10 @@ internal static class NativeRewardUI
             BeginRewards(pending);
     }
 
-    private static bool BeforeRewardEscape(ref bool __result)
+    // HarmonyX runs every prefix: a key an earlier one took is not handled again.
+    private static bool BeforeRewardEscape(ref bool __result, bool __runOriginal)
     {
+        if (!__runOriginal) return false;
         if (NativeAchievementToast.Active || NativeResultsUI.BlocksEscape) { __result = true; return false; }
         // Deck Guide pages: with no dialog up between two pages Escape must not open the Game Menu over the picker.
         if (NativeDeckPickerGuide.Open) { __result = true; return false; }

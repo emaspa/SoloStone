@@ -137,7 +137,7 @@ internal static class NativeUiTree
                 // Post-match popups carry semantic ids (rewards.continue, results.detailed); others stay dialog.<button>.
                 string popupId = alert.GetInfo()?.m_id;
                 Name(alert.m_okayButton, NativeHelpText.DialogButtonId(popupId, "okay") ?? NativeWelcomeText.DialogButtonId(popupId, "okay")
-                    ?? LocalRewardPresentation.DialogButtonId(popupId, "okay"));
+                    ?? GameLanguage.DialogButtonId(popupId, "okay") ?? LocalRewardPresentation.DialogButtonId(popupId, "okay"));
                 Name(alert.m_confirmButton, NativeHelpText.DialogButtonId(popupId, "confirm") ?? NativeStarterText.DialogButtonId(popupId, "confirm")
                     ?? NativeSaveDeleteText.DialogButtonId(popupId, "confirm") ?? NativeDeckGuideText.DialogButtonId(popupId, "confirm") ?? GameLanguage.DialogButtonId(popupId, "confirm")
                     ?? LocalRewardPresentation.DialogButtonId(popupId, "confirm"));

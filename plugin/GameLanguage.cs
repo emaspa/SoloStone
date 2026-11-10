@@ -90,13 +90,13 @@ internal static class GameLanguage
     }
 
     internal const string Id = "options.language", ObjectName = "SoloStoneLanguageOption";
-    internal const string PopupId = "LOCAL_SOLOSTONE_LANGUAGE", ConfirmId = "language.switch", CancelId = "language.cancel";
+    internal const string PopupId = "LOCAL_SOLOSTONE_LANGUAGE", ConfirmId = "language.switch", CancelId = "language.cancel", OkId = "language.ok";
     internal const string Header = "Language", SwitchLabel = "SWITCH", CancelLabel = "CANCEL";
     internal static string Label(string running, string next) => "Language: " + Name(next) + (next == running ? "" : " (restart)");
 
     internal static string SwitchBody(string running, string offer) =>
         "Play in " + Name(offer) + "? It applies the next time you start SoloStone; " + Name(running) + " stays until then. "
-        + "SoloStone's own menus stay in English.";
+        + "Menus only SoloStone has stay in English.";
 
     internal static string OnlyBody(IList<string> installed) =>
         "This copy of the game has " + (installed == null || installed.Count == 0 ? "no language files SoloStone can check" : Name(installed[0]) + " only") + ". "
@@ -104,5 +104,6 @@ internal static class GameLanguage
         + "and install it again (your saves stay). Options then offers every language the new copy has.";
 
     internal static string DialogButtonId(string popupId, string button) =>
-        popupId != PopupId ? null : button == "confirm" ? ConfirmId : button == "cancel" ? CancelId : null;
+        popupId != PopupId ? null : button == "confirm" ? ConfirmId : button == "cancel" ? CancelId : button == "okay" ? OkId : null;
+    internal static bool IsDialogButtonId(string id) => id == ConfirmId || id == CancelId || id == OkId;
 }

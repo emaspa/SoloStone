@@ -66,7 +66,11 @@ static partial class Program
         Check(!GameLanguage.OnlyBody(new List<string>()).Contains("only."),"no languages found reads sensibly");
         Check(new[]{body,only,GameLanguage.Label("enUS","deDE")}.All(text=>!text.Contains('—') && !text.Contains('–')),"no dashes in player copy");
         Check(GameLanguage.DialogButtonId(GameLanguage.PopupId,"confirm")=="language.switch" && GameLanguage.DialogButtonId(GameLanguage.PopupId,"cancel")=="language.cancel"
-            && GameLanguage.DialogButtonId("OTHER","confirm")==null,"test-control ids for the popup buttons only");
+            && GameLanguage.DialogButtonId(GameLanguage.PopupId,"okay")=="language.ok" && GameLanguage.DialogButtonId("OTHER","confirm")==null,"test-control ids for the popup buttons only");
+        Check(GameLanguage.IsDialogButtonId("language.ok") && GameLanguage.IsDialogButtonId("language.switch") && !GameLanguage.IsDialogButtonId("dialog.okay"),
+            "the language popup's buttons are reviewed ids, so its Battle.net how-to text does not deny them");
+        string protocol=File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"plugin-source","TestControlProtocol.cs"));
+        Check(protocol.Contains("|| GameLanguage.IsDialogButtonId(element.Id)"),"test control skips the popup-text denylist for the language popup's buttons");
 
         // The guard keeps every other launch option, login tokens included, null.
         foreach(string key in new[]{"WEB_TOKEN","REGION","locale","LOCALE ",null})

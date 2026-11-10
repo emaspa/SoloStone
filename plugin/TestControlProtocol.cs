@@ -930,7 +930,8 @@ internal static class UiRules
             catch { /* An unavailable gear adapter leaves the bnet type denial in force. */ }
             // Deck guide dialog buttons (guide.next, guide.close; ids exist only on our guide popups): the guide is owner-reviewed deck text that
             // may use words like "buy" or "gift" as game terms, so the popup text is not their context. Like every reviewed semantic id (guide.* is not dialog.*) their GameObject path is not checked either; id, type and label still pass the denylist.
-            bool guide = NativeDeckGuideText.IsDialogButtonId(element.Id);
+            // The language popup's buttons (language.*) likewise: its fixed text says how to add a language in Battle.net.
+            bool guide = NativeDeckGuideText.IsDialogButtonId(element.Id) || GameLanguage.IsDialogButtonId(element.Id);
             // A pack actor's printed card text is not a commerce action (e.g. a card with "Gift" in its name).
             bool packCard = element.Pack?.ContainsKey("cardId") == true && element.Id?.StartsWith("packs.card:", StringComparison.Ordinal) == true;
             element.Denied = packCard ? Deny(element.Type, null, element.Id, null)

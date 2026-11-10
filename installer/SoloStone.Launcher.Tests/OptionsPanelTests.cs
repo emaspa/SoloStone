@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 // Options > SoloStone Options (plugin/OptionsPanelLayout.cs): where the Options plank may go and how the panel lays its rows
@@ -7,6 +8,22 @@ using System.Linq;
 static partial class Program
 {
     static void OptionsPanelTests() {
+        // HarmonyX runs every prefix even after one returns false, so each Escape prefix after the first must leave a key an earlier one
+        // took (the Pace page's Escape reopens SoloStone Options; the panel's own prefix must not then send it on to Options).
+        string plugin=Path.Combine(AppContext.BaseDirectory,"plugin-all");
+        var escape=new System.Text.RegularExpressions.Regex(@"HandleEscapeKey""\)[^;]*?nameof\((\w+)\)\)(\s*\{\s*priority\s*=\s*Priority\.First)?");
+        int prefixes=0;
+        foreach(string file in Directory.GetFiles(plugin,"*.cs",SearchOption.AllDirectories)) {
+            string source=File.ReadAllText(file);
+            foreach(System.Text.RegularExpressions.Match patch in escape.Matches(source)) {
+                prefixes++;
+                if(patch.Groups[2].Success) continue;
+                var method=System.Text.RegularExpressions.Regex.Match(source,@"static bool "+patch.Groups[1].Value+@"\(([^)]*)\)\s*\{\s*if \(!__runOriginal\) return false;");
+                Check(method.Success,"Escape prefix "+Path.GetFileName(file)+" "+patch.Groups[1].Value+" leaves a key an earlier prefix took");
+            }
+        }
+        Check(prefixes>=4,"the Escape prefixes were found: "+prefixes);
+
         // A panel frame 120 wide and 80 tall, the header plate dipping 6 into its top, the Back/Done bar under its bottom edge.
         var frame=new PanelRect(-60,-24,120,80);
         var region=OptionsPanelLayout.Region(frame,50,-30);
