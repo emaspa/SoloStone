@@ -412,6 +412,12 @@ static partial class Program
         RejectsBecause(admit,"excludes a network interface","excluded firewall interface rejected");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1;
         RejectsBecause(admit,"Windows policy prevents","ineffective local policy rejected");
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3;
+        RejectsBecause(admit,"Windows policy prevents","unknown local policy state rejected");
+        // "Block all incoming connections" reports 2, and outbound block rules still apply.
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=2;
+        FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy);
+        Check(true,"inbound-blocked profile accepted");
         policy=HealthyPolicy(installed); policy.CurrentProfileTypes=0;
         RejectsBecause(admit,"active profiles could not be verified","unknown active profiles rejected");
         // A changed client file must match its install record even though the compiled pin is gone.

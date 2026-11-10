@@ -18,7 +18,11 @@ namespace SoloStone
         }
         // Tests supply API-shaped snapshots.
         internal static void VerifyPolicy(InstallRecord record,string[] executables,dynamic policy) {
-            if((int)policy.LocalPolicyModifyState!=0)
+            // 1: Group Policy owns the profile, so local rules may not apply. 2: "Block all incoming connections" is on; that only stops
+            // inbound rules, and SoloStone's are outbound blocks, so they still apply. Group Policy that drops local rules is also caught
+            // by FirewallRegistry (AllowLocalPolicyMerge), which the launcher runs after this.
+            int modify=(int)policy.LocalPolicyModifyState;
+            if(modify!=0 && modify!=2)
                 throw new InvalidOperationException("Windows policy prevents SoloStone from verifying its local firewall rules. Contact the computer administrator.");
             int active=(int)policy.CurrentProfileTypes;
             if(active==0 || (active & ~7)!=0)
