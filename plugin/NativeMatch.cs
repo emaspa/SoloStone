@@ -366,6 +366,9 @@ public sealed class NativeMatch
     // they show can be told apart from one created in the match.
     private HashSet<int> opponentStartingIds;
     internal bool OpponentStartedWith(int entity) => opponentStartingIds != null && opponentStartingIds.Contains(entity);
+    // The cards dealt to the opponent before their mulligan: in their opening hand, these were kept, the others came in the mulligan.
+    private HashSet<int> opponentDealtIds;
+    internal bool OpponentDealt(int entity) => opponentDealtIds != null && opponentDealtIds.Contains(entity);
     private List<string> statsOffered, statsKept;
     private List<int> statsOpening;
     // The history fact count when the player answered the mulligan: the opening deal before it enters the hand too, and a card
@@ -822,6 +825,7 @@ public sealed class NativeMatch
         statsStartingCards = Game.Player1.DeckZone.Concat(Game.Player1.HandZone).Where(card => card.Card.Id != "GAME_005")
             .ToDictionary(card => card.Id, card => card.Card.Id);
         opponentStartingIds = new HashSet<int>(Game.Player2.DeckZone.Concat(Game.Player2.HandZone).Where(card => card.Card.Id != "GAME_005").Select(card => card.Id));
+        opponentDealtIds = new HashSet<int>(Game.Player2.HandZone.Select(card => card.Id));
 #endif
         ObserveRewardHistory(Game.PowerHistory.Last);
         SendHistory(Game.PowerHistory.Last);
@@ -1705,6 +1709,10 @@ public sealed class NativeMatch
 #else
         int publicTarget = task.Target?.Id ?? 0;
 #endif
+#if ENGINE_SOURCE
+        // The secret helper tests the opponent's hidden Secrets against this action on copies of the game, before it happens.
+        var secretTests = NativeSecretHelper.Before(Game, task);
+#endif
         copyCompletions.Clear();
         CopyTransportBridge.Enter(this, Game);
         try
@@ -1716,6 +1724,9 @@ public sealed class NativeMatch
         {
             CopyTransportBridge.Exit();
         }
+#if ENGINE_SOURCE
+        NativeSecretHelper.After(Game, secretTests);
+#endif
         if (task is ConcedeTask)
         {
             humanOptions = null;

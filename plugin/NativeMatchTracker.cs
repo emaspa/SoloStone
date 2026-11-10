@@ -20,6 +20,7 @@ using static MatchOverlay;
 // player's side): played, summoned, discarded and otherwise revealed cards from their starting deck, then the cards they created and
 // played. A Secret stays hidden until it is revealed; nothing in their hand or deck shows. Under the name: their hand and deck
 // counts. It fails closed on its own: an error turns only the opponent tracker off for the session.
+// The card chips (NativeCardChips), the secret helper (NativeSecretHelper) and the card history (NativeCardHistory) refresh and draw with them.
 internal static class NativeMatchTracker
 {
     private static MatchTrackerSettings settings;
@@ -46,17 +47,18 @@ internal static class NativeMatchTracker
     private static OwnDeckLedger ledger;
 #endif
 
-    internal static void Initialize(ManualLogSource logger) { log = logger; settings = MatchOverlay.Settings; }
+    internal static void Initialize(ManualLogSource logger) { log = logger; settings = MatchOverlay.Settings; NativeCardChips.Initialize(logger); NativeSecretHelper.Initialize(logger); NativeCardHistory.Initialize(logger); }
 
     // Called from OfflineProbe.Update, once per frame.
     internal static void Tick()
     {
+        NativeCardHistory.Sweep();
         if (failed || settings == null) return;
         try
         {
             var match = ClientBridge.CurrentMatch;
             var game = match?.Game;
-            if (!settings.DeckTracker && !settings.AttackCounter && !settings.OpponentTracker || game == null || !MatchOverlay.InMatch()) { Forget(); return; }
+            if (!settings.AnyTracker || game == null || !MatchOverlay.InMatch()) { Forget(); return; }
             if (!ReferenceEquals(match, tracked))
             {
                 Forget(); tracked = match;
@@ -70,7 +72,7 @@ internal static class NativeMatchTracker
 #if ENGINE_SOURCE
             if (settings.AttackCounter && Time.frameCount - heroesFrame >= 30) { heroesFrame = Time.frameCount; PlaceHeroes(); }
             int history = game.PowerHistory?.Full?.Count ?? 0;
-            int trackers = (settings.DeckTracker ? 1 : 0) | (settings.OpponentTracker ? 2 : 0);
+            int trackers = (settings.DeckTracker ? 1 : 0) | (settings.OpponentTracker ? 2 : 0) | (settings.CardChips ? 4 : 0) | (settings.SecretHelper ? 8 : 0) | (settings.CounterChips ? 16 : 0);
             if (trackers != observedTrackers) { observedTrackers = trackers; observedHistory = -1; }
             if (history == observedHistory || !ClientBridge.BoardSettled()) return;
             bool friendlyTurn = game.CurrentPlayer == game.Player1;
@@ -83,6 +85,8 @@ internal static class NativeMatchTracker
                 view = DeckTrackerRows.Build(game.Player1.DeckCards.Select(c => c.Id), known.Known, known.Unknown, known.UnseenRemoved, known.Remaining, Describe);
             }
             if (settings.OpponentTracker && !opponentFailed) ObserveOpponent(game, match);
+            if (settings.CardChips || settings.CounterChips) NativeCardChips.Observe(game, match, settings.CardChips, settings.CounterChips); else NativeCardChips.Forget();
+            if (settings.SecretHelper) NativeSecretHelper.Observe(game); else NativeSecretHelper.Forget();
             observedHistory = history;
             string summary = view?.Summary ?? "off";
             summary += " attack=" + friendlyAttack + "/" + opposingAttack;
@@ -154,6 +158,9 @@ internal static class NativeMatchTracker
         tracked = null; view = null; observedHistory = -1; lastSummary = null; measuredView = null; drawnWidth = 0f; deckName = title = "Deck";
         stats = null; recordLine = null;
         opponent = null; opponentName = opponentTitle = "Opponent"; opponentClass = ""; measuredOpponent = null; opponentWidth = 0f;
+        NativeCardChips.Forget();
+        NativeSecretHelper.Forget();
+        NativeCardHistory.Forget();
 #if ENGINE_SOURCE
         lastOpponent = null;
 #endif
@@ -194,7 +201,7 @@ internal static class NativeMatchTracker
     // Drawing. Sizes are shares of the screen height, like the brand label; rows shrink to fit a long list.
     private static GUIStyle name, number, header, note, small;
     private static int styleRow;
-    private static Texture2D panel, badge, zeroBadge, attackPanel, fade, tile, countBox;
+    private static Texture2D panel, badge, zeroBadge, fade, tile, countBox;
     internal static readonly Color PanelColor = new Color(.05f, .06f, .09f, .78f);
     // Rows are tiles a little taller than a line of text, so the card art reads; a long list shrinks them to fit.
     internal const float RowShare = .034f, WidthRows = 8f, MaxWidthRows = 11.5f, TopShare = .075f, BottomShare = .9f, MarginShare = .012f;
@@ -230,8 +237,11 @@ internal static class NativeMatchTracker
         if (failed || MatchOverlay.Hidden || Event.current.type != EventType.Repaint) return;
         try
         {
-            if (settings.AttackCounter) { Counter(friendlyHero, friendlyAttack); Counter(opposingHero, opposingAttack); }
+            if (settings.AttackCounter) { Counter(friendlyHero, friendlyAttack, false); Counter(opposingHero, opposingAttack, true); }
             if (settings.OpponentTracker && !opponentFailed) DrawOpponent();
+            if (settings.CardChips || settings.CounterChips) NativeCardChips.Draw();
+            if (settings.CardHistory) NativeCardHistory.Draw();
+            if (settings.SecretHelper) NativeSecretHelper.Draw();
             if (!settings.DeckTracker || view == null) return;
             bool statsShown = settings.DeckStats && stats != null, columns = statsShown && MatchOverlay.StatsShown;
             if (statsShown && settings.MulliganGuide) MulliganGuide();
@@ -387,15 +397,13 @@ internal static class NativeMatchTracker
     }
 
     // A badge left of the hero portrait, level with its middle: the attack total.
-    private static void Counter(Rect hero, int attack)
+    // A pill in the card chips' style: the player's on the left of their hero, the opponent's under the bottom of their portrait.
+    private static void Counter(Rect hero, int attack, bool opposing)
     {
         if (attack < 0 || hero.width <= 0) return;
-        float row = Screen.height * TextShare * 1.25f;
-        Styles(Mathf.RoundToInt(Screen.height * TextShare));
-        var area = new Rect(hero.xMin - row * 3.6f, hero.center.y - row * .6f, row * 3.2f, row * 1.2f);
-        GUI.DrawTexture(area, attackPanel);
-        Text(new Rect(area.x + row * .3f, area.y, area.width - row * .6f, area.height), "Attack", name, Align.Left);
-        Text(new Rect(area.x + row * .3f, area.y, area.width - row * .6f, area.height), attack.ToString(), header, Align.Right);
+        var color = attack > 0 ? new Color(1f, .62f, .55f) : new Color(.85f, .86f, .9f);
+        if (opposing) NativeCardChips.Badge("Attack " + attack, color, hero.center.x, hero.yMax, NativeCardChips.Anchor.Centre);
+        else NativeCardChips.Badge("Attack " + attack, color, hero.xMin - Screen.height * TextShare * .4f, hero.center.y, NativeCardChips.Anchor.Right);
     }
 
     // A card tile for another screen (NativeStatsScreen): the tracker's row at that height, with text sized to match.
@@ -444,7 +452,6 @@ internal static class NativeMatchTracker
         panel = panel ?? Solid(PanelColor);
         badge = badge ?? Solid(new Color(.16f, .36f, .72f, .95f));
         zeroBadge = zeroBadge ?? Solid(new Color(.3f, .3f, .34f, .95f));
-        attackPanel = attackPanel ?? Solid(new Color(.45f, .12f, .08f, .85f));
         fade = fade ?? Fade(TileColor);
         tile = tile ?? Solid(TileColor);
         countBox = countBox ?? Solid(new Color(.03f, .035f, .05f, 1f));
