@@ -25,8 +25,11 @@ namespace SabberStoneCore.Actions
 
         public static int AttackLimit(ICharacter source) => source[GameTag.MEGA_WINDFURY] > 0 ? 4 : source.HasWindfury ? 2 : 1;
 
+        // The card data also puts tag 4128 on Captain Crowley, Tortolla, The Great Dracorex, Razidir and some spells and
+        // locations; only Fyrakk is Immune to Fire spells. The tag still switches it off when Fyrakk is silenced.
         public static bool PreventsFire(CardType sourceType, int school, ICharacter target) =>
             sourceType == CardType.SPELL && school == 2 && target[FireImmune] > 0
+            && target.Card.AssetId == CardSets.Client.Sets.FyrakkTheBlazing.DbfId
             && !(target is Minion minion && minion.IsSilenced);
 
         internal static int Outgoing(IPlayable source, int damage)
