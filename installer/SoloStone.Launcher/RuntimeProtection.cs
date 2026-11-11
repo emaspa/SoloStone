@@ -127,8 +127,10 @@ namespace SoloStone
         // Windows stores the excluded adapters of a profile as GUIDs: one REG_SZ, comma-separated. COM gives an array of names, or of GUIDs for a disabled adapter.
         public static List<string> Ids(object value) {
             var ids=new List<string>();
+            // Walked through IEnumerable, not Array: the plugin compiles this file too, and Unity's Mono is only checked
+            // for the interface call (installer/mono-assumed.txt).
             var many=value as Array;
-            foreach(object item in many!=null?many:new[]{value})
+            foreach(object item in many!=null?(System.Collections.IEnumerable)many:new[]{value})
                 // Anything but a string still counts, as itself: an unexpected shape must refuse, not pass.
                 foreach(string part in (item as string??(item==null?"":item.ToString())).Split(','))
                     if(part.Trim().Length>0) ids.Add(part.Trim());
