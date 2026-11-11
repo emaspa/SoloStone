@@ -606,7 +606,8 @@ internal static partial class NativeUIProbe
     private static bool CorePlayable(string __0, ref bool __result)
     {
         if (!NativeUIProjection.ForcesCorePlayability(active, __0)
-            && !NativeUIProjection.ForcesTestPlayability(active, __0)) return true;
+            && !NativeUIProjection.ForcesTestPlayability(active, __0)
+            && !NativeUIProjection.ForcesHeroPlayability(active, __0)) return true;
         __result = true; return false;
     }
     private static bool CorePlayableDef(EntityDef __0, ref bool __result) => CorePlayable(__0?.GetCardId(), ref __result);

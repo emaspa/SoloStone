@@ -141,6 +141,12 @@ internal static class NativeUIProjection
     internal static bool ForcesTestPlayability(bool active, string cardId) =>
         active && cardId != null && (testStandardIds.Value.Contains(cardId) || LocalDecks.IsLegalDeckbuildingCard(cardId));
 
+    // A deck's hero card goes through the same event check when its deck box is opened or picked. The client ties
+    // Illidan (HERO_10) to the "bt_gameplay" event, which is never active offline, so Demon Hunter decks showed
+    // "This class is not yet available." The other base heroes use "always".
+    internal static bool ForcesHeroPlayability(bool active, string cardId) =>
+        active && cardId != null && LocalDecks.PlayerHeroes.Contains(cardId);
+
     internal static bool AcknowledgeAndRefreshCore(LocalProfile profile, string matchId, Action refresh, out Exception refreshError)
     {
         refreshError = null;
