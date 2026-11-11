@@ -65,6 +65,9 @@ namespace SabberStoneCore.Tasks.PlayerTasks
 				Game.PowerHistory.Add(PowerHistoryBuilder.TagChange(Source.Id, GameTag.IS_USING_TRADE_OPTION, 0));
             QuestRules.SettleHandCountChanges(Controller);
 			Generic.Draw(Controller, Controller.DeckZone.ToList().IndexOf(replacement));
+			// The draw can summon (Eredar Deceptor's Felbat). "After you summon" triggers such as Collapsing Star's refresh
+			// fire in the cleanup step, as after any other action, and so do deaths.
+			Game.DeathProcessingAndAuraUpdate();
 
 			if (Game.History)
 				Game.PowerHistory.Add(PowerHistoryBuilder.BlockEnd());
