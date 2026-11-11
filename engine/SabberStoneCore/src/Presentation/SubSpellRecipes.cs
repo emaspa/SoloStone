@@ -55,6 +55,9 @@ namespace SabberStoneCore.Presentation
             Add("EDR_814 TLC_901 TLC_630t EDR_813b", VisualPhase.Damage, "ReuseFX_Decay_Missile_AcidGlob_Super_Simultaneous:1e8b03e89cf4f7a4d8dc823cf8132ad1");
             Add("BE_559 WW_001t CAP_006 TLC_620", VisualPhase.Damage, "ReuseFX_Physical_Missile_Generic_Super_Simultaneous:6ff0a03c3b353254d887e154c0f94e33");
             Add("JAIL_445", VisualPhase.Damage, "ReuseFX_Necrotic_Missile_Bone_Small_Super:d25c28f8f4b12964d8ab765bac643495");
+            // Collapsing Star (Soul Immolation's hero power): its CardDef, and Soul Immolation's, author no play spell, so the
+            // random hit had a splat but no missile. Shot from the hero, as for the other hero-power damage routes.
+            Add("JAIL_EVENT_101hp", VisualPhase.Damage, "ReuseFX_Shadow_Missile_Blast_Small_Super_Simultaneous:e39b07044149c034d9b1d70182afe5b0");
             Add("EDR_263", VisualPhase.Damage, "ReuseFX_Lightning_Missile_Bolt_Small_Super_Simultaneous:4e176ec954bdc6f4bb7494e521d35c8a", subOption: 0);
             Add("EDR_813", VisualPhase.Damage, "ReuseFX_Decay_Missile_AcidGlob_Super_Simultaneous:1e8b03e89cf4f7a4d8dc823cf8132ad1", subOption: 1);
             Add("EDR_570", VisualPhase.Damage, "ReuseFX_Shadow_Missile_Blast_Small_Super_Simultaneous:e39b07044149c034d9b1d70182afe5b0", subOption: 0);
