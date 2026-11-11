@@ -16,23 +16,32 @@ namespace SoloStone
             catch(Exception error) { throw new InvalidOperationException("Windows Firewall protection could not be verified. SoloStone cannot start. Run SoloStone firewall --apply.",error); }
             finally { if(policy!=null && Marshal.IsComObject(policy)) Marshal.FinalReleaseComObject(policy); }
         }
-        // Tests supply API-shaped snapshots.
-        internal static void VerifyPolicy(InstallRecord record,string[] executables,dynamic policy) {
-            // 1: Group Policy owns the profile, so local rules may not apply. 2: "Block all incoming connections" is on; that only stops
-            // inbound rules, and SoloStone's are outbound blocks, so they still apply. Group Policy that drops local rules is also caught
-            // by FirewallRegistry (AllowLocalPolicyMerge), which the launcher runs after this.
-            int modify=(int)policy.LocalPolicyModifyState;
-            if(modify!=0 && modify!=2)
-                throw new InvalidOperationException("Windows policy prevents SoloStone from verifying its local firewall rules. Contact the computer administrator.");
+        // Tests supply API-shaped snapshots, registry contents for adapter names, and what Group Policy sets (FirewallRegistry reads it on a real machine).
+        internal static void VerifyPolicy(InstallRecord record,string[] executables,dynamic policy,NetworkAdapters adapters=null,
+            Func<int,bool> policyBlocksAllInbound=null,Func<bool> policyDropsLocalRules=null) {
             int active=(int)policy.CurrentProfileTypes;
             if(active==0 || (active & ~7)!=0)
                 throw new InvalidOperationException("Windows Firewall active profiles could not be verified. SoloStone cannot start.");
+            // 0: local rules apply. 2: "Block all incoming connections" is on locally; that only stops inbound rules, and SoloStone's are
+            // outbound blocks, so they still apply. 1: Group Policy overrides the current profile, and on Windows 11 it reports that in two
+            // cases: the policy sets "Apply local firewall rules: No", which drops SoloStone's rules, or the policy itself blocks all
+            // incoming connections, which leaves them working. So 1 passes only when policy blocks all inbound traffic on every active
+            // profile and drops local rules on none; any other cause still refuses. FirewallRegistry, which the launcher runs after this,
+            // also refuses dropped local rules.
+            int modify=(int)policy.LocalPolicyModifyState;
+            if(modify==1 && (policyBlocksAllInbound??FirewallRegistry.PolicyBlocksAllInbound)(active)
+                && !(policyDropsLocalRules??FirewallRegistry.PolicyDropsLocalRules)()) modify=2;
+            if(modify!=0 && modify!=2)
+                throw new InvalidOperationException("Windows policy prevents SoloStone from verifying its local firewall rules. Contact the computer administrator.");
+            // Exclusions count on every profile, as in FirewallRegistry: Windows can move a network to another profile while the game runs.
+            var excluded=new List<ExcludedAdapter>();
             foreach(int profile in new[]{1,2,4}) {
                 if(!(bool)policy.FirewallEnabled[profile])
                     throw new InvalidOperationException("Windows Firewall must be enabled for all network profiles before SoloStone can start.");
-                if((active & profile)!=0 && HasInterfaces(policy.ExcludedInterfaces[profile]))
-                    throw new InvalidOperationException("Windows Firewall excludes a network interface. SoloStone cannot start.");
+                object ids=policy.ExcludedInterfaces[profile];
+                ExcludedAdapter.Add(excluded,profile==1?"Domain":profile==2?"Private":"Public",ExcludedAdapter.Ids(ids),adapters??NetworkAdapters.Machine);
             }
+            if(excluded.Count>0) throw new InvalidOperationException(ExcludedAdapter.Message(excluded));
             foreach(string exe in executables) {
                 var matches=new List<object>();
                 foreach(dynamic rule in policy.Rules)

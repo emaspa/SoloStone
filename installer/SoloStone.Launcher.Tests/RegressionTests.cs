@@ -409,9 +409,32 @@ static partial class Program
         policy=HealthyPolicy(installed); policy.Rules.Add(policy.Rules[0]);
         RejectsBecause(admit,"missing or duplicated","duplicate firewall rules rejected");
         policy=HealthyPolicy(installed); policy.ExcludedInterfaces[4]=new[]{"Ethernet"};
-        RejectsBecause(admit,"excludes a network interface","excluded firewall interface rejected");
+        RejectsBecause(admit,"switched off for the network adapter \"Ethernet\" in the Public profile","excluded firewall interface rejected");
+        // As the registry check: an exclusion on a profile not in use refuses too. COM gives a disabled adapter's GUID.
+        policy=HealthyPolicy(installed); policy.ExcludedInterfaces[2]=new object[]{HamachiGuid}; policy.ExcludedInterfaces[4]=new object[]{HamachiGuid};
+        RejectsBecause(()=>FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy,SampleAdapters()),
+            "adapter \"Hamachi\" (LogMeIn Hamachi Virtual Ethernet Adapter, disabled) in the Private and Public profiles","exclusion on an inactive profile refused, adapter named");
+        policy=HealthyPolicy(installed); policy.ExcludedInterfaces[1]=new object[0]; policy.ExcludedInterfaces[2]=new object[]{""};
+        FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy);
+        Check(true,"empty exclusion lists accepted");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1;
         RejectsBecause(admit,"Windows policy prevents","ineffective local policy rejected");
+        // State 1 from a Group Policy that blocks all incoming connections: SoloStone's outbound blocks still apply (issue #18).
+        int blockedProfiles=0;
+        Action<bool> policyState1=dropsLocalRules=>FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy,
+            null,active=>(active & ~blockedProfiles)==0,()=>dropsLocalRules);
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1; blockedProfiles=4;
+        policyState1(false); Check(true,"state 1 accepted when policy blocks all inbound and keeps local rules");
+        RejectsBecause(()=>policyState1(true),"Windows policy prevents","state 1 refused when policy drops local rules, even with inbound blocked");
+        blockedProfiles=0;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","state 1 with inbound allowed refused: its cause is not the inbound block");
+        policy.CurrentProfileTypes=6; blockedProfiles=4;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","state 1 refused unless policy blocks inbound on every active profile");
+        blockedProfiles=6; policyState1(false); Check(true,"state 1 accepted when both active profiles block inbound");
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3; blockedProfiles=7;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","an unknown state stays refused with inbound blocked");
+        Check(FirewallRegistry.PolicyProfiles.Contains("PrivateProfile") && FirewallRegistry.PolicyProfiles.Contains("StandardProfile")
+            && FirewallRegistry.PolicyProfiles.Contains("DomainProfile") && FirewallRegistry.PolicyProfiles.Contains("PublicProfile"),"Group Policy is read under both names of the Private profile");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3;
         RejectsBecause(admit,"Windows policy prevents","unknown local policy state rejected");
         // "Block all incoming connections" reports 2, and outbound block rules still apply.
