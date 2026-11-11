@@ -416,6 +416,22 @@ static partial class Program
         Check(true,"empty exclusion lists accepted");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1;
         RejectsBecause(admit,"Windows policy prevents","ineffective local policy rejected");
+        // State 1 from a Group Policy that blocks all incoming connections: SoloStone's outbound blocks still apply (issue #18).
+        int blockedProfiles=0;
+        Action<bool> policyState1=dropsLocalRules=>FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy,
+            null,active=>(active & ~blockedProfiles)==0,()=>dropsLocalRules);
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1; blockedProfiles=4;
+        policyState1(false); Check(true,"state 1 accepted when policy blocks all inbound and keeps local rules");
+        RejectsBecause(()=>policyState1(true),"Windows policy prevents","state 1 refused when policy drops local rules, even with inbound blocked");
+        blockedProfiles=0;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","state 1 with inbound allowed refused: its cause is not the inbound block");
+        policy.CurrentProfileTypes=6; blockedProfiles=4;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","state 1 refused unless policy blocks inbound on every active profile");
+        blockedProfiles=6; policyState1(false); Check(true,"state 1 accepted when both active profiles block inbound");
+        policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3; blockedProfiles=7;
+        RejectsBecause(()=>policyState1(false),"Windows policy prevents","an unknown state stays refused with inbound blocked");
+        Check(FirewallRegistry.PolicyProfiles.Contains("PrivateProfile") && FirewallRegistry.PolicyProfiles.Contains("StandardProfile")
+            && FirewallRegistry.PolicyProfiles.Contains("DomainProfile") && FirewallRegistry.PolicyProfiles.Contains("PublicProfile"),"Group Policy is read under both names of the Private profile");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3;
         RejectsBecause(admit,"Windows policy prevents","unknown local policy state rejected");
         // "Block all incoming connections" reports 2, and outbound block rules still apply.
