@@ -816,10 +816,11 @@ internal static class UiRules
     internal static bool IsMatchEscape(string id) => id == GameMenuId || id == GameMenuConcedeId || NativeReportText.IsControl(id);
     // Test control only, production input never reads it: a live match may open Options to prove what it shows there. Not an
     // escape: a frozen or unresolved match still refuses these.
-    // Opening and closing Options > SoloStone Options counts too, their rows do not (ids: OptionsPanelText).
+    // Opening and closing Options > SoloStone Options and Tracker Options counts too, their rows do not (ids: OptionsPanelText).
     internal static bool IsMatchInspection(string id) => id == GameMenuOptionsId || id == OptionsDismissId || OptionsPanelNavigation.Contains(id);
     private static readonly HashSet<string> OptionsPanelNavigation = new HashSet<string> {
-        "options.solostone", "options.solostone.back", "options.solostone.done", "options.solostone.dismiss" };
+        "options.solostone", "options.solostone.back", "options.solostone.done", "options.solostone.dismiss",
+        "options.tracker", "options.tracker.back", "options.tracker.done", "options.tracker.dismiss" };
     internal static Func<UiElement, bool> GameMenuControlAllowed;
 
     // A press is a left click unless it asks for "right", which only collection preview tiles accept.

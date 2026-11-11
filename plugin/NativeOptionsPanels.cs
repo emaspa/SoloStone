@@ -7,7 +7,7 @@ using HarmonyLib;
 using MiniJSON;
 using UnityEngine;
 
-// SoloStone's own settings, behind an Options plank the way native Sound Options keeps its sliders behind one.
+// SoloStone's own settings, behind two Options planks the way native Sound Options keeps its sliders behind one.
 //
 // Native Sound Options: OptionsMenu.OnSoundOptionsButtonReleased hides Options without its hide handler (Hide(false): the Options
 // instance stays alive for Back), then instantiates the OptionsMenu_Sound prefab (OptionsMenu_Sound_phone on PC, by the client's own
@@ -15,17 +15,18 @@ using UnityEngine;
 // makes a full-screen input blocker; Show punches the root in. Back hides it and shows Options again, Done and a click outside only hide
 // it, and Escape (BnetBar.HandleEscapeKey) does what Back does.
 //
-// Here: the main Options dialog gets a "SoloStone Options" plank, a clone of the Sound Options plank hung off the Options root (a pane
-// would re-lay it, see NativeOptionsPace), in the right column's Other group under Disable Screen Shake. It takes the first slot of OptionsPanelLayout.ButtonSlots that is inside the dialog and clear of every other row, in rendered bounds.
-// It opens a panel built from the same Sound Options prefab, loaded raw and copied under an inactive holder, so SoundOptionsMenu
+// Here: the main Options dialog gets two planks, "SoloStone Options" and "Tracker Options", clones of the Sound Options plank hung off
+// the Options root (a pane would re-lay them, see NativeOptionsPace), in the right column's Other group under Disable Screen Shake. They
+// take the first slot of OptionsPanelLayout.ButtonSlots that is inside the dialog and clear of every other row, in rendered bounds.
+// Each opens a panel built from the same Sound Options prefab, loaded raw and copied under an inactive holder, so SoundOptionsMenu
 // never wakes (no listeners, no SoundOptionsMenu.Get, no sliders): its component is removed and its sliders, checkboxes, Restore
 // Defaults plank and inner section frames are switched off. Frame, header, Back and Done stay; the header reads the panel's title.
 // Rows are copies of that prefab's own checkbox and plank, so they look like Sound Options' rows. The panel then behaves like Sound
 // Options: Back and Escape return to Options, Done and a click outside close it. The controls keep their classes, settings and log
 // lines (NativeTurnTimerOption, HandheldUi, NativeFpsCounter, NativeDeckInferenceOption, NativeOptionsPace, NativeLanguageOption,
-// NativeStarterDecks); only where they live changed.
+// NativeStarterDecks, NativeMatchTrackerOptions); only where they live changed.
 //
-// The panel outlives the Options instance (OverlayUI keeps it) and is built once. Layout runs on every open from rendered bounds
+// Panels outlive the Options instance (OverlayUI keeps them) and are built once each. Layout runs on every open from rendered bounds
 // (OptionsPanelLayout.Plan): until the open animation settles, then once more whenever a row comes or goes, and each settled layout
 // logs one OPTIONS_PANEL line with every row's screen rect and any overlap. Every path fails closed: a failure logs one warning,
 // hides what it could not place, and leaves native Options usable (a panel that cannot open brings Options back).
@@ -70,7 +71,7 @@ internal static class NativeOptionsPanels
     private sealed class Host : MonoBehaviour { }
 
     private static ManualLogSource log;
-    private static UIBButton soloButton;
+    private static UIBButton soloButton, trackerButton;
     private static bool buttonsPlaced, buttonsFailed;
     private static string buttonsSlot;
     private static GameObject soundPrefab, holder;
@@ -79,12 +80,14 @@ internal static class NativeOptionsPanels
     private static string pendingKey;
     // A load that has not answered by then gives Options back (the press is dropped; the next press tries again).
     private const float LoadSeconds = 10f;
-    private static Panel solo;
+    private static Panel solo, tracker;
     private static bool paceFromPanel;
 
     internal static UIBButton SoloStoneButton => soloButton != null && soloButton.gameObject.activeInHierarchy ? soloButton : null;
+    internal static UIBButton TrackerButton => trackerButton != null && trackerButton.gameObject.activeInHierarchy ? trackerButton : null;
     // The open panel's root, for Handheld UI's larger menu text (DeckLayout.TickMenus); null when none is on screen.
-    internal static Transform ShownRoot => solo != null && solo.Shown && solo.Root != null && solo.Root.activeInHierarchy ? solo.Root.transform : null;
+    internal static Transform ShownRoot => RootOf(solo) ?? RootOf(tracker);
+    private static Transform RootOf(Panel panel) => panel != null && panel.Shown && panel.Root != null && panel.Root.activeInHierarchy ? panel.Root.transform : null;
     // A panel row's control is on screen (for the State helpers of the classes that own them).
     internal static bool OnScreen(Component control) => control != null && control.gameObject.activeInHierarchy && PanelOf(control)?.Shown == true;
 
@@ -97,20 +100,21 @@ internal static class NativeOptionsPanels
             prefix: new HarmonyMethod(typeof(NativeOptionsPanels), nameof(BeforeEscape)));
     }
 
-    // ---- The plank in native Options (one per Options instance: Options is re-created after it closes).
+    // ---- The two planks in native Options (one pair per Options instance: Options is re-created after it closes).
 
     private static void AddButtons(OptionsMenu __instance)
     {
-        soloButton = null; buttonsPlaced = buttonsFailed = false; buttonsSlot = null;
+        soloButton = trackerButton = null; buttonsPlaced = buttonsFailed = false; buttonsSlot = null;
         try
         {
             UIBButton source = __instance.m_soundOptionsButton ?? __instance.m_miscellaneousButton;
             if (source == null) throw new InvalidOperationException("Options plank template missing");
             soloButton = Plank(__instance, source, OptionsPanelText.SoloStoneButtonObject, OptionsPanelText.SoloStoneButton, OptionsPanelText.SoloStoneKey);
+            trackerButton = Plank(__instance, source, OptionsPanelText.TrackerButtonObject, OptionsPanelText.TrackerButton, OptionsPanelText.TrackerKey);
         }
         catch (Exception error)
         {
-            HideButtons(); soloButton = null;
+            HideButtons(); soloButton = trackerButton = null;
             log?.LogWarning("OPTIONS_PANELS buttons unavailable: " + error.Message);
         }
     }
@@ -131,12 +135,13 @@ internal static class NativeOptionsPanels
     private static void HideButtons()
     {
         if (soloButton != null) soloButton.gameObject.SetActive(false);
+        if (trackerButton != null) trackerButton.gameObject.SetActive(false);
     }
 
     // Called from OfflineProbe.Update, once per frame.
     internal static void Tick()
     {
-        if (!buttonsPlaced && !buttonsFailed && soloButton != null) // Unity null: also true once Options is destroyed.
+        if (!buttonsPlaced && !buttonsFailed && soloButton != null && trackerButton != null) // Unity null: also true once Options is destroyed.
         {
             try { PlaceButtons(); }
             catch (Exception error) { buttonsFailed = true; HideButtons(); log?.LogWarning("OPTIONS_PANELS buttons placement: " + error.Message); }
@@ -148,6 +153,7 @@ internal static class NativeOptionsPanels
             Fail(key, new TimeoutException("Sound Options prefab load took over " + LoadSeconds + " s"));
         }
         TickPanel(solo);
+        TickPanel(tracker);
     }
 
     // Once per Options instance, when Screen Shake has its rendered size (past the Show punch). Everything hangs off the Options root,
@@ -168,7 +174,7 @@ internal static class NativeOptionsPanels
         PanelRect? slot = options.m_miscellaneousButton != null && Span(options.m_miscellaneousButton.gameObject, right, up, false, out PanelRect misc) ? misc : (PanelRect?)null;
 
         var tried = new List<string>();
-        KeyValuePair<string, PanelRect>? first = null;
+        KeyValuePair<string, PanelRect[]>? first = null;
         foreach (var candidate in OptionsPanelLayout.ButtonSlots(shakeRect, above, slot, plank.Width, plank.Height))
         {
             first = first ?? candidate;
@@ -182,22 +188,23 @@ internal static class NativeOptionsPanels
         Placed(options, view, first.Value.Key, string.Join("; ", tried));
     }
 
-    private static void Put(PanelRect slot, Vector3 right, Vector3 up)
+    private static void Put(PanelRect[] slots, Vector3 right, Vector3 up)
     {
-        ProfileFormKit.Center(soloButton.gameObject, right, up, slot.CenterX, slot.CenterY);
-        soloButton.gameObject.SetActive(true);
+        ProfileFormKit.Center(soloButton.gameObject, right, up, slots[0].CenterX, slots[0].CenterY);
+        ProfileFormKit.Center(trackerButton.gameObject, right, up, slots[1].CenterX, slots[1].CenterY);
+        soloButton.gameObject.SetActive(true); trackerButton.gameObject.SetActive(true);
     }
 
     private static void Placed(OptionsMenu options, Camera view, string slot, string overlaps)
     {
         buttonsPlaced = true; buttonsSlot = slot;
         string message = "OPTIONS_PANELS buttons slot=" + slot + " screen=" + Screen.width + "x" + Screen.height
-            + " soloStone=" + Pixels(DeckLayout.ScreenRect(soloButton.gameObject, view))
+            + " soloStone=" + Pixels(DeckLayout.ScreenRect(soloButton.gameObject, view)) + " tracker=" + Pixels(DeckLayout.ScreenRect(trackerButton.gameObject, view))
             + " screenShake=" + Pixels(DeckLayout.ScreenRect(options.m_screenShakeCheckbox.gameObject, view));
         if (options.m_middleBottomRightPane != null)
         {
             Rect group = DeckLayout.ScreenRect(options.m_middleBottomRightPane.gameObject, view);
-            bool inside = Inside(group, DeckLayout.ScreenRect(soloButton.gameObject, view));
+            bool inside = Inside(group, DeckLayout.ScreenRect(soloButton.gameObject, view)) && Inside(group, DeckLayout.ScreenRect(trackerButton.gameObject, view));
             message += " otherGroup=" + Pixels(group) + " inOtherGroup=" + inside;
         }
         message += " overlaps=" + overlaps;
@@ -206,22 +213,29 @@ internal static class NativeOptionsPanels
 
     private static bool Inside(Rect outer, Rect inner) => inner.xMin >= outer.xMin && inner.xMax <= outer.xMax && inner.yMin >= outer.yMin && inner.yMax <= outer.yMax;
 
-    // Every native row the plank overlaps (a tenth of each height is slack, as NativeFpsCounter.Overlaps), and "outsideBody" when it
-    // leaves the dialog body.
+    // Every native row and the other plank either plank overlaps (a tenth of each height is slack, as NativeFpsCounter.Overlaps), and
+    // "outsideBody" when one leaves the dialog body.
     private static List<string> ButtonClashes(OptionsMenu options, Camera view)
     {
-        var names = new List<string>(NativeFpsCounter.Overlaps(options, soloButton, Obstacles(options), out bool measured, soloButton));
-        if (!measured) names.Add("notMeasured");
+        var names = new List<string>();
+        foreach (var button in new[] { soloButton, trackerButton })
+        {
+            string own = button == soloButton ? "soloStone" : "tracker";
+            var clashes = NativeFpsCounter.Overlaps(options, button, Obstacles(options), out bool measured, soloButton, trackerButton);
+            foreach (string clash in clashes) names.Add(own + ">" + clash);
+            if (!measured) names.Add(own + ">notMeasured");
+        }
         return names;
     }
 
-    // What the plank in the Other group must clear, in release builds too: the native rows still shown. Placement and the test-control
-    // state both check this list, so a slot the log calls clear is clear in state.optionsPanels too.
+    // What a plank in the Other group must clear, in release builds too: the native rows still shown, and the other plank. Placement and
+    // the test-control state both check this list, so a slot the log calls clear is clear in state.optionsPanels too.
     internal static List<KeyValuePair<string, Component>> Obstacles(OptionsMenu options) => new List<KeyValuePair<string, Component>> {
         Pair("signature", options.m_signatureTextDisplayDropdown), Pair("frameRate", options.m_graphicsFps), Pair("fullscreen", options.m_fullScreenCheckbox),
         Pair("resolution", options.m_graphicsRes), Pair("quality", options.m_graphicsQuality), Pair("masterVolume", options.m_masterVolume),
         Pair("musicVolume", options.m_musicVolume), Pair("soundOptions", options.m_soundOptionsButton), Pair("screenShake", options.m_screenShakeCheckbox),
-        Pair("versionLabel", VersionLabel?.GetValue(options) as Component)
+        Pair("versionLabel", VersionLabel?.GetValue(options) as Component),
+        Pair("soloStoneOptions", soloButton), Pair("trackerOptions", trackerButton)
     };
     // UberText's assembly is not referenced here, so the field is read by name (as NativeOptionsPace).
     private static readonly FieldInfo VersionLabel = AccessTools.Field(typeof(OptionsMenu), "m_versionLabel");
@@ -253,8 +267,8 @@ internal static class NativeOptionsPanels
         catch (Exception error) { loading = false; pendingKey = null; Fail(key, error); }
     }
 
-    private static Panel Get(string key) => key == OptionsPanelText.SoloStoneKey ? solo : null;
-    private static void Keep(string key, Panel panel) { if (key == OptionsPanelText.SoloStoneKey) solo = panel; }
+    private static Panel Get(string key) => key == OptionsPanelText.SoloStoneKey ? solo : tracker;
+    private static void Keep(string key, Panel panel) { if (key == OptionsPanelText.SoloStoneKey) solo = panel; else tracker = panel; }
 
     // The panel goes before Options comes back, so the two never show together.
     private static void Fail(string key, Exception error)
@@ -310,7 +324,7 @@ internal static class NativeOptionsPanels
         if (!__runOriginal) return false;
         try
         {
-            foreach (var panel in new[] { solo })
+            foreach (var panel in new[] { solo, tracker })
                 if (panel != null && panel.Shown && panel.Root != null && panel.Root.activeInHierarchy) { GoBack(panel); __result = true; return false; }
         }
         catch (Exception error) { log?.LogWarning("OPTIONS_PANEL escape: " + error.Message); }
@@ -377,16 +391,44 @@ internal static class NativeOptionsPanels
             if (back != null) back.AddEventListener(UIEventType.RELEASE, _ => GoBack(panel));
             if (done != null) done.AddEventListener(UIEventType.RELEASE, _ => { if (back == null) GoBack(panel); else Close(panel); });
 
-            AddCheck(panel, check, 0, "turnTimer", NativeTurnTimerOption.Id, "SoloStoneTurnTimerCheckbox", NativeTurnTimerOption.Label, NativeTurnTimerOption.Attach, NativeTurnTimerOption.Sync);
-            AddCheck(panel, check, 0, "handheld", OptionsPanelText.HandheldId, "SoloStoneHandheldUiCheckbox", HandheldUi.Label, HandheldUi.Attach, HandheldUi.Sync);
-            AddCheck(panel, check, 0, "fpsCounter", NativeFpsCounterText.Id, NativeFpsCounterText.ObjectName, NativeFpsCounterText.Label, NativeFpsCounter.Attach, NativeFpsCounter.Sync);
-            AddCheck(panel, check, 0, "deckInference", NativeDeckInferenceText.Id, NativeDeckInferenceText.ObjectName, NativeDeckInferenceText.Label,
-                NativeDeckInferenceOption.Attach, NativeDeckInferenceOption.Sync);
-            if (NativeOptionsPace.Available)
-                AddPlank(panel, reset, 1, "pace", NativeOptionsPaceText.Id, NativeOptionsPaceText.ObjectName, NativeOptionsPace.Attach, NativeOptionsPace.Sync, NativeOptionsPace.Wanted);
-            if (NativeLanguageOption.Available)
-                AddPlank(panel, reset, 1, "language", GameLanguage.Id, GameLanguage.ObjectName, NativeLanguageOption.Attach, NativeLanguageOption.Sync, null);
-            AddPlank(panel, reset, 1, "restoreStarters", NativeStarterText.OptionsId, NativeStarterText.OptionsObject, NativeStarterDecks.Attach, null, NativeStarterDecks.Wanted);
+            if (key == OptionsPanelText.SoloStoneKey)
+            {
+                AddCheck(panel, check, 0, "turnTimer", NativeTurnTimerOption.Id, "SoloStoneTurnTimerCheckbox", NativeTurnTimerOption.Label, NativeTurnTimerOption.Attach, NativeTurnTimerOption.Sync);
+                AddCheck(panel, check, 0, "handheld", OptionsPanelText.HandheldId, "SoloStoneHandheldUiCheckbox", HandheldUi.Label, HandheldUi.Attach, HandheldUi.Sync);
+                AddCheck(panel, check, 0, "fpsCounter", NativeFpsCounterText.Id, NativeFpsCounterText.ObjectName, NativeFpsCounterText.Label, NativeFpsCounter.Attach, NativeFpsCounter.Sync);
+                AddCheck(panel, check, 0, "deckInference", NativeDeckInferenceText.Id, NativeDeckInferenceText.ObjectName, NativeDeckInferenceText.Label,
+                    NativeDeckInferenceOption.Attach, NativeDeckInferenceOption.Sync);
+                if (NativeOptionsPace.Available)
+                    AddPlank(panel, reset, 1, "pace", NativeOptionsPaceText.Id, NativeOptionsPaceText.ObjectName, NativeOptionsPace.Attach, NativeOptionsPace.Sync, NativeOptionsPace.Wanted);
+                if (NativeLanguageOption.Available)
+                    AddPlank(panel, reset, 1, "language", GameLanguage.Id, GameLanguage.ObjectName, NativeLanguageOption.Attach, NativeLanguageOption.Sync, null);
+                AddPlank(panel, reset, 1, "restoreStarters", NativeStarterText.OptionsId, NativeStarterText.OptionsObject, NativeStarterDecks.Attach, null, NativeStarterDecks.Wanted);
+            }
+            else
+            {
+                AddCheck(panel, check, 0, "countdown", OptionsPanelText.CountdownId, "SoloStoneCountdownCheckbox", OptionsPanelText.CountdownLabel,
+                    box => NativeMatchTrackerOptions.Attach(0, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "deckTracker", OptionsPanelText.DeckTrackerId, "SoloStoneDeckTrackerCheckbox", OptionsPanelText.DeckTrackerLabel,
+                    box => NativeMatchTrackerOptions.Attach(1, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "opponentTracker", OptionsPanelText.OpponentTrackerId, "SoloStoneOpponentTrackerCheckbox", OptionsPanelText.OpponentTrackerLabel,
+                    box => NativeMatchTrackerOptions.Attach(6, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "attackCounter", OptionsPanelText.AttackCounterId, "SoloStoneAttackCounterCheckbox", OptionsPanelText.AttackCounterLabel,
+                    box => NativeMatchTrackerOptions.Attach(2, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "secretHelper", OptionsPanelText.SecretHelperId, "SoloStoneSecretHelperCheckbox", OptionsPanelText.SecretHelperLabel,
+                    box => NativeMatchTrackerOptions.Attach(8, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 0, "cardHistory", OptionsPanelText.CardHistoryId, "SoloStoneCardHistoryCheckbox", OptionsPanelText.CardHistoryLabel,
+                    box => NativeMatchTrackerOptions.Attach(10, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "cardArt", OptionsPanelText.CardArtId, "SoloStoneCardArtCheckbox", OptionsPanelText.CardArtLabel,
+                    box => NativeMatchTrackerOptions.Attach(3, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "deckStats", OptionsPanelText.DeckStatsId, "SoloStoneDeckStatsCheckbox", OptionsPanelText.DeckStatsLabel,
+                    box => NativeMatchTrackerOptions.Attach(4, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "mulliganGuide", OptionsPanelText.MulliganGuideId, "SoloStoneMulliganGuideCheckbox", OptionsPanelText.MulliganGuideLabel,
+                    box => NativeMatchTrackerOptions.Attach(5, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "cardChips", OptionsPanelText.CardChipsId, "SoloStoneCardChipsCheckbox", OptionsPanelText.CardChipsLabel,
+                    box => NativeMatchTrackerOptions.Attach(7, box), NativeMatchTrackerOptions.Sync);
+                AddCheck(panel, check, 1, "counterChips", OptionsPanelText.CounterChipsId, "SoloStoneCounterChipsCheckbox", OptionsPanelText.CounterChipsLabel,
+                    box => NativeMatchTrackerOptions.Attach(9, box), NativeMatchTrackerOptions.Sync);
+            }
             if (panel.Rows.Count == 0) throw new InvalidOperationException("no rows");
 
             root.SetActive(false);
@@ -623,7 +665,7 @@ internal static class NativeOptionsPanels
 
     private static Panel PanelOf(Component control)
     {
-        foreach (var panel in new[] { solo })
+        foreach (var panel in new[] { solo, tracker })
             if (panel != null && panel.Root != null && control.transform.IsChildOf(panel.Root.transform)) return panel;
         return null;
     }
@@ -633,7 +675,7 @@ internal static class NativeOptionsPanels
     {
         get
         {
-            foreach (var panel in new[] { solo })
+            foreach (var panel in new[] { solo, tracker })
             {
                 if (panel == null || panel.Root == null) continue;
                 if (panel.Back != null) yield return new KeyValuePair<PegUIElement, string>(panel.Back, OptionsPanelText.BackId(panel.Key));
@@ -647,7 +689,7 @@ internal static class NativeOptionsPanels
     internal static bool CheckState(string id, out bool on)
     {
         on = false;
-        foreach (var panel in new[] { solo })
+        foreach (var panel in new[] { solo, tracker })
         {
             if (panel == null) continue;
             foreach (var row in panel.Rows)
@@ -657,14 +699,14 @@ internal static class NativeOptionsPanels
     }
 
 #if !SOLOSTONE_RELEASE
-    // Test control (state.optionsPanels): the Options plank and its panel, every rect normalized 1280x720 with a top-left origin
+    // Test control (state.optionsPanels): both Options planks and both panels, every rect normalized 1280x720 with a top-left origin
     // like every ui rect, and what each overlaps (Options rows for the planks, the other rows, header and buttons for a panel row).
     internal static JsonNode State()
     {
         var node = new JsonNode { { "slot", buttonsSlot }, { "placed", buttonsPlaced }, { "failed", buttonsFailed }, { "prefabLoaded", soundPrefab != null }, { "loading", loading } };
         var options = OptionsMenu.Get();
-        node["buttons"] = new JsonNode { { "soloStone", ButtonState(options, soloButton) } };
-        node["panels"] = new JsonNode { { OptionsPanelText.SoloStoneKey, PanelState(solo) } };
+        node["buttons"] = new JsonNode { { "soloStone", ButtonState(options, soloButton) }, { "tracker", ButtonState(options, trackerButton) } };
+        node["panels"] = new JsonNode { { OptionsPanelText.SoloStoneKey, PanelState(solo) }, { OptionsPanelText.TrackerKey, PanelState(tracker) } };
         return node;
     }
 
@@ -677,7 +719,8 @@ internal static class NativeOptionsPanels
             Camera view = CameraUtils.FindFirstByLayerMask(1 << button.gameObject.layer);
             if (view == null) return node;
             node["rect"] = Normalized(DeckLayout.ScreenRect(button.gameObject, view));
-            node["overlaps"] = TestControlProtocol.List(NativeFpsCounter.Overlaps(options, button, Obstacles(options), out bool measured, soloButton).Cast<object>());
+            node["overlaps"] = TestControlProtocol.List(NativeFpsCounter.Overlaps(options, button, Obstacles(options), out bool measured, soloButton, trackerButton)
+                .Cast<object>());
             node["measured"] = measured;
         }
         catch (Exception error) { node["error"] = error.Message; }

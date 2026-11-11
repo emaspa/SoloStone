@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-// Options > SoloStone Options (plugin/OptionsPanelLayout.cs): where the Options plank may go and how the panel lays its rows
-// out. Distances along the screen's right and up axes, y up.
+// Options > SoloStone Options and Tracker Options (plugin/OptionsPanelLayout.cs): where the two Options planks may go and how a
+// panel lays its rows out. Distances along the screen's right and up axes, y up.
 static partial class Program
 {
     static void OptionsPanelTests() {
@@ -53,28 +53,31 @@ static partial class Program
         var long1=new PanelRow(400,9,true);
         Check(OptionsPanelLayout.Plan(region,new List<IList<PanelRow>>{ new List<PanelRow>{long1} }).Rows[0][0].Width<=region.Width,"too wide: the row shrinks to its column");
 
-        // Three rows in one column: a compact block in the middle (not spread over the whole height).
-        var few=OptionsPanelLayout.Plan(region,new List<IList<PanelRow>>{ new List<PanelRow>{check,check,check} }).Rows[0];
-        float block=few[0].Top-few[2].Y, middle=(few[0].Top+few[2].Y)/2;
+        // Tracker Options: three rows, one column, a compact block in the middle (not spread over the whole height).
+        var tracker=OptionsPanelLayout.Plan(region,new List<IList<PanelRow>>{ new List<PanelRow>{check,check,check} }).Rows[0];
+        float block=tracker[0].Top-tracker[2].Y, middle=(tracker[0].Top+tracker[2].Y)/2;
         Check(block<region.Height && Math.Abs(middle-region.CenterY)<.01f,"a short column sits as a block in the middle");
         Refuses(()=>OptionsPanelLayout.Plan(region,new List<IList<PanelRow>>()),"no columns");
 
         // Main Options: Screen Shake, the hidden spectator row over it, the hidden Miscellaneous plank under it.
         var shake=new PanelRect(10,0,40,8); var above=new PanelRect(10,12,40,8); var misc=new PanelRect(12,-14,36,10);
         var slots=OptionsPanelLayout.ButtonSlots(shake,above,misc,30,10);
-        Check(slots.Select(slot=>slot.Key).SequenceEqual(new[]{"below","above"}),"under Screen Shake first, then over it");
+        Check(slots.Select(slot=>slot.Key).SequenceEqual(new[]{"below","around"}),"both under Screen Shake first, then one over it");
         var below=slots[0].Value;
-        Check(Math.Abs(below.CenterY-misc.CenterY)<.01f && Math.Abs(below.CenterX-misc.CenterX)<.01f && below.Top<=shake.Y,"below: the plank takes Miscellaneous's slot, clear of Screen Shake");
-        Check(slots[1].Value.Y>=shake.Top,"above: the plank clears Screen Shake");
+        Check(Math.Abs(below[0].CenterY-misc.CenterY)<.01f && Math.Abs(below[0].CenterX-misc.CenterX)<.01f,"the first plank takes Miscellaneous's slot");
+        Check(below[1].Top<below[0].Y && below[0].Top<=shake.Y,"the second plank goes under the first, both clear of Screen Shake");
+        var around=slots[1].Value;
+        Check(around[0].Y>=shake.Top && around[1].Top<=shake.Y,"around: one over Screen Shake, one under it");
+        Check(!PanelRect.Overlap(below[0],below[1]) && !PanelRect.Overlap(around[0],around[1]),"the two planks never overlap");
         var close=OptionsPanelLayout.ButtonSlots(shake,above,new PanelRect(12,-4,36,10),30,10)[0].Value;
-        Check(close.Top<=shake.Y,"a Miscellaneous slot touching Screen Shake: the plank moves down to clear it");
+        Check(close[0].Top<=shake.Y,"a Miscellaneous slot touching Screen Shake: the plank moves down to clear it");
         var none=OptionsPanelLayout.ButtonSlots(shake,above,null,30,10)[0].Value;
-        Check(none.Top<=shake.Y && Math.Abs(none.CenterX-shake.CenterX)<.01f,"no Miscellaneous plank: under Screen Shake, centred on it");
+        Check(none[0].Top<=shake.Y && Math.Abs(none[0].CenterX-shake.CenterX)<.01f,"no Miscellaneous plank: under Screen Shake, centred on it");
 
-        Check(OptionsPanelText.ButtonId(OptionsPanelText.SoloStoneKey)==OptionsPanelText.SoloStoneButtonId && OptionsPanelText.BackId(OptionsPanelText.SoloStoneKey)=="options.solostone.back"
-            && OptionsPanelText.DismissId(OptionsPanelText.SoloStoneKey)=="options.solostone.dismiss" && OptionsPanelText.Title(OptionsPanelText.SoloStoneKey)=="SoloStone Options","panel ids and title");
+        Check(OptionsPanelText.BackId(OptionsPanelText.SoloStoneKey)=="options.solostone.back" && OptionsPanelText.DismissId(OptionsPanelText.TrackerKey)=="options.tracker.dismiss"
+            && OptionsPanelText.Title(OptionsPanelText.TrackerKey)=="Tracker Options","panel ids and titles");
         string protocol=PluginSource("TestControlProtocol.cs");
-        Check(new[]{OptionsPanelText.SoloStoneKey}.All(key=>new[]{OptionsPanelText.ButtonId(key),OptionsPanelText.BackId(key),OptionsPanelText.DoneId(key),OptionsPanelText.DismissId(key)}
-            .All(id=>protocol.Contains("\""+id+"\""))),"test control may open and close the panel in a live match");
+        Check(new[]{OptionsPanelText.SoloStoneKey,OptionsPanelText.TrackerKey}.All(key=>new[]{OptionsPanelText.ButtonId(key),OptionsPanelText.BackId(key),OptionsPanelText.DoneId(key),OptionsPanelText.DismissId(key)}
+            .All(id=>protocol.Contains("\""+id+"\""))),"test control may open and close both panels in a live match");
     }
 }

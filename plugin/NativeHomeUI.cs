@@ -351,8 +351,8 @@ internal static class NativeHomeUI
         LayoutDrawer(box, report);
     }
 
-    // The prefab authors the slot positions (no runtime layout). With Feats the four slots sit at native spacing
-    // (Store, Feats, Packs, Collection); without it Store takes the hidden Journal slot. The row then centres on the
+    // The prefab authors the slot positions (no runtime layout). With Feats the slots sit at native spacing
+    // (Store, Feats, Packs, Collection, then Stats); without it Store takes the hidden Journal slot. The row then centres on the
     // drawer mesh, which moves with the buttons.
     private static void LayoutDrawer(Box box, Action<string> report)
     {
@@ -374,19 +374,21 @@ internal static class NativeHomeUI
                 + " old=" + (box.GetOldJournalButton() == null ? "null" : Path(box.GetOldJournalButton().transform))
                 + " siblings=" + string.Join(",", Children(store.parent)));
         }
-        // Each slot carries its sibling label, badge and hitbox.
+        // Each slot carries its sibling label, badge and hitbox. SoloStone's Stats slot (NativeStatsScreen) follows Collection.
         float step = collection.position.x - packs.position.x;
+        Transform stats = NativeStatsScreen.Slot(box, collection, report);
         if (journal != null) { MoveX(journal, packs.position.x - step); MoveX(store, packs.position.x - 2 * step); }
         else MoveX(store, packs.position.x - step);
+        if (stats != null) MoveX(stats, packs.position.x + 2 * step);
         var mesh = box.m_Drawer?.GetDrawerMesh();
         if (mesh == null || mesh.bounds.size.x <= 0) { PlaceJournalWidget(box, journal, store); return; }
-        float middle = journal != null ? packs.position.x - step / 2 : packs.position.x;
+        float middle = (journal != null ? packs.position.x - step / 2 : packs.position.x) + (stats != null ? step / 2 : 0f);
         float centre = mesh.bounds.center.x, shift = centre - middle;
         if (Math.Abs(shift) > Math.Abs(step) * 0.001f)
         {
-            foreach (var slot in new[] { store, journal, packs, collection })
+            foreach (var slot in new[] { store, journal, packs, collection, stats })
                 if (slot != null) MoveX(slot, slot.position.x + shift);
-            report?.Invoke("NATIVE_MENU drawer centred x=" + centre + " shift=" + shift + " spacing=" + step + " feats=" + (journal != null));
+            report?.Invoke("NATIVE_MENU drawer centred x=" + centre + " shift=" + shift + " spacing=" + step + " feats=" + (journal != null) + " stats=" + (stats != null));
         }
         PlaceJournalWidget(box, journal, store);
     }

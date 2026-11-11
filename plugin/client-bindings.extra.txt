@@ -10,6 +10,9 @@ site BlockingDiagnostics.Read | Field | (unknown type) # diagnostic: only logs, 
 site BlockingDiagnostics.Read | Method | (unknown type) # diagnostic: only logs, a missing member degrades to null
 site BlockingDiagnostics.Read | Property | (unknown type) # diagnostic: only logs, a missing member degrades to null
 
+# CardArt.Tick
+site CardArt.Tick | Property | (unknown type) # AssetHandle<T>.Asset, read by reflection on the handle CardDef's portrait getters return (the plugin does not reference Blizzard.T5.AssetManager); a miss turns the tracker's card art off for the session
+
 # ClientBridge.HumanChoicePresentation
 row F ChoiceCardMgr m_friendlyChoicesShown # BlockingDiagnostics.Get on a typed ChoiceCardMgr: whether the friendly choice cards are shown
 site ClientBridge.HumanChoicePresentation | Property | ChoiceCardMgr.m_friendlyChoicesShown (not on this type) # row above; a miss reads as shown
@@ -119,6 +122,11 @@ row F HistoryManager m_pendingBigCardEntry # ReflectionBindings table row
 row F HistoryManager+BigCardEntry m_finishedCallback # ReflectionBindings table row
 row F HistoryManager m_showingBigCard # ReflectionBindings table row
 site NativeBigCardWatchdog.ResolveAdmissionBindings | Field | HistoryManager.RunFinishedCallbackAndDestroyBigCard (not on this type) # the ReflectionBindings string table of the big-card watchdog, rows above; a miss disables the watchdog
+
+# NativeCardHistory.Spawn
+row M AssetLoader InstantiatePrefab # GetMethods().First(name == InstantiatePrefab && (AssetReference, enum) parameters): the card history's 40% card models; a miss turns the card history off for the session
+site NativeCardHistory.Spawn | Enumerate | (unknown type) # row above: the loader First(...); AssetReference op_Implicit is outside references/game
+site NativeCardHistory.Spawn | Method | (unknown type) # row above: the loader First(...); AssetReference op_Implicit is outside references/game
 
 # NativeCosmeticCheck+<>c__DisplayClass28_0`1.<Asset>b__1
 
@@ -432,6 +440,9 @@ site NativeSpellWatchdog.UpdateGeneral | Property | PowerTaskList.m_zoneChangeLi
 site NativeSpellWatchdog.UpdateGeneral | Property | Spell.m_activeStateType (not on this type) # stall watchdog, gameplay recovery: BlockingDiagnostics.Get reads on Spell, AttackSpellController, SpellController subclasses, PowerTaskList and ZoneChangeList (rows under NativeSpellWatchdog.Recover and .UpdateGeneral). A miss makes the watchdog observe-only or fail its recovery, never crash
 site NativeSpellWatchdog.UpdateGeneral | Property | Spell.m_fsm (not on this type) # stall watchdog, gameplay recovery: BlockingDiagnostics.Get reads on Spell, AttackSpellController, SpellController subclasses, PowerTaskList and ZoneChangeList (rows under NativeSpellWatchdog.Recover and .UpdateGeneral). A miss makes the watchdog observe-only or fail its recovery, never crash
 site NativeSpellWatchdog.UpdateGeneral | Property | SpellController.m_sourceAttackSpell (not on this type) # stall watchdog, gameplay recovery: BlockingDiagnostics.Get reads on Spell, AttackSpellController, SpellController subclasses, PowerTaskList and ZoneChangeList (rows under NativeSpellWatchdog.Recover and .UpdateGeneral). A miss makes the watchdog observe-only or fail its recovery, never crash
+
+# NativeStatsScreen.Relabel
+site NativeStatsScreen.Relabel | Property | UnityEngine.Component.Text (not on this type) # UberText.Text on the cloned Collection slot's caption; UberText is outside references/game; a miss leaves the drawer without the Stats button
 
 # NativeTestControl.PowersText
 

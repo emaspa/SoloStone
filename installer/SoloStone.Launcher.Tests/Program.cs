@@ -156,6 +156,7 @@ static partial class Program
             LanguageTests(temp);
             OptionsPanelTests();
             NativeStringsTests(temp);
+            DeckStatsTests();
             ClientCheckTests(temp);
             Round2Tests(temp,source,bundle,supported,saves);
             BoundaryTests();
