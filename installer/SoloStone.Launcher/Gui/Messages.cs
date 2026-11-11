@@ -17,6 +17,9 @@ namespace SoloStone
         // Exit 42: the plugin's own checks. detail names what the client lacks.
         public static string ClientBlocked(string detail) => "This Hearthstone client no longer matches SoloStone, so the game stopped"
             + (string.IsNullOrEmpty(detail) ? "." : ": " + detail + ".") + " Your saves were not changed. SoloStone needs an update for this client.";
+        // Exit 47: the game's firewall check refused. reason is that check's own sentence, run again by the launcher; null if it now passes.
+        public static string FirewallRefused(string reason) => "The game could not verify SoloStone's firewall protection and stopped. "
+            + (string.IsNullOrEmpty(reason) ? "Fix the firewall protection, then play." : reason);
         // One place for what a player sees when something goes wrong. The command line and the windows share it.
         public static string Friendly(Exception e) {
             if (e is InvalidOperationException) return e.Message;

@@ -16,8 +16,8 @@ namespace SoloStone
             catch(Exception error) { throw new InvalidOperationException("Windows Firewall protection could not be verified. SoloStone cannot start. Run SoloStone firewall --apply.",error); }
             finally { if(policy!=null && Marshal.IsComObject(policy)) Marshal.FinalReleaseComObject(policy); }
         }
-        // Tests supply API-shaped snapshots.
-        internal static void VerifyPolicy(InstallRecord record,string[] executables,dynamic policy) {
+        // Tests supply API-shaped snapshots, and registry contents for adapter names.
+        internal static void VerifyPolicy(InstallRecord record,string[] executables,dynamic policy,NetworkAdapters adapters=null) {
             // 1: Group Policy owns the profile, so local rules may not apply. 2: "Block all incoming connections" is on; that only stops
             // inbound rules, and SoloStone's are outbound blocks, so they still apply. Group Policy that drops local rules is also caught
             // by FirewallRegistry (AllowLocalPolicyMerge), which the launcher runs after this.
@@ -27,12 +27,15 @@ namespace SoloStone
             int active=(int)policy.CurrentProfileTypes;
             if(active==0 || (active & ~7)!=0)
                 throw new InvalidOperationException("Windows Firewall active profiles could not be verified. SoloStone cannot start.");
+            // Exclusions count on every profile, as in FirewallRegistry: Windows can move a network to another profile while the game runs.
+            var excluded=new List<ExcludedAdapter>();
             foreach(int profile in new[]{1,2,4}) {
                 if(!(bool)policy.FirewallEnabled[profile])
                     throw new InvalidOperationException("Windows Firewall must be enabled for all network profiles before SoloStone can start.");
-                if((active & profile)!=0 && HasInterfaces(policy.ExcludedInterfaces[profile]))
-                    throw new InvalidOperationException("Windows Firewall excludes a network interface. SoloStone cannot start.");
+                object ids=policy.ExcludedInterfaces[profile];
+                ExcludedAdapter.Add(excluded,profile==1?"Domain":profile==2?"Private":"Public",ExcludedAdapter.Ids(ids),adapters??NetworkAdapters.Machine);
             }
+            if(excluded.Count>0) throw new InvalidOperationException(ExcludedAdapter.Message(excluded));
             foreach(string exe in executables) {
                 var matches=new List<object>();
                 foreach(dynamic rule in policy.Rules)

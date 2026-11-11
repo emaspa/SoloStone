@@ -145,9 +145,9 @@ namespace SoloStone
                         if(!client.HasExited) { client.Kill(); client.WaitForExit(); }
                         LaunchGrant.Remove(reports);
                         var outcome=Health.Classify(false,timedOut,timedOut?(int?)null:client.ExitCode);
-                        var health=engine.ReportHealth(outcome,timedOut?"The game did not confirm the mod in time.":ExitMessage(client.ExitCode,reports,run));
+                        var health=engine.ReportHealth(outcome,timedOut?"The game did not confirm the mod in time.":ExitMessage(client.ExitCode,reports,run,record));
                         if(health.Restored) throw new UpdateRestoredException(health.Message);
-                        throw new InvalidOperationException(client.ExitCode!=0 ? ExitMessage(client.ExitCode,reports,run) : "The offline safety plugin did not confirm this launch. SoloStone was stopped. Check the verified plugin payload.");
+                        throw new InvalidOperationException(client.ExitCode!=0 ? ExitMessage(client.ExitCode,reports,run,record) : "The offline safety plugin did not confirm this launch. SoloStone was stopped. Check the verified plugin payload.");
                     }
                     LaunchGrant.Remove(reports);
                     engine.ReportHealth(HealthOutcome.Confirmed,null);
@@ -168,7 +168,7 @@ namespace SoloStone
                         if(!used.Add(token)) throw new InvalidOperationException("A save-switch token was reused. Start SoloStone again.");
                         previous=run; continue;
                     }
-                    if(client.ExitCode!=0) throw new InvalidOperationException(ExitMessage(client.ExitCode,reports,run));
+                    if(client.ExitCode!=0) throw new InvalidOperationException(ExitMessage(client.ExitCode,reports,run,record));
                     return 0;
                 }
             }
@@ -188,17 +188,23 @@ namespace SoloStone
             timedOut=true;
             return false;
         }
-        static string ExitMessage(int code,string reports,string run) {
+        static string ExitMessage(int code,string reports,string run,InstallRecord record) {
             switch(code) {
+                case Health.ExitFirewallRefused: return FirewallRefused(record);
                 case 40: return "The plugin rejected this installation. Open SoloStone again.";
                 case 41: return "The game detected an available network connection and stopped. Reapply SoloStone firewall protection.";
                 case 42: return Messages.ClientBlocked(ClientCheckFile.BlockDetail(reports,run));
-                case Health.ExitFirewallRefused: return "The game could not verify SoloStone's firewall protection and stopped. Fix the firewall protection, then play.";
                 case Health.ExitSetupFailed: return "The game could not prepare its files or saves and stopped. Check available space on this drive, then try again. Your saves were not changed.";
                 case Health.ExitStartupError: return "The game stopped while the offline plugin was starting. The log is in the client's BepInEx folder.";
                 case Health.ExitRefused: return "The game refused this launch. Start it from the SoloStone launcher. If this repeats: "+InstallRecord.StartOver;
                 default: return "The game stopped (exit "+code+"). Your installation and saves were kept.";
             }
+        }
+        // The game ran the registry check the launcher ran just before it started, and refused (exit 47). Run it again for the reason:
+        // it names the adapter or rule at fault, as the plugin's log does.
+        static string FirewallRefused(InstallRecord record) {
+            try { FirewallRegistry.Verify(record,Executables(record)); return Messages.FirewallRefused(null); }
+            catch(InvalidOperationException e) { return Messages.FirewallRefused(e.Message); }
         }
     }
     // Windows side of the update engine. Runs only the staged launcher's offline check; it opens no network itself.

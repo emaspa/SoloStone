@@ -406,7 +406,14 @@ static partial class Program
         policy=HealthyPolicy(installed); policy.Rules.Add(policy.Rules[0]);
         RejectsBecause(admit,"missing or duplicated","duplicate firewall rules rejected");
         policy=HealthyPolicy(installed); policy.ExcludedInterfaces[4]=new[]{"Ethernet"};
-        RejectsBecause(admit,"excludes a network interface","excluded firewall interface rejected");
+        RejectsBecause(admit,"switched off for the network adapter \"Ethernet\" in the Public profile","excluded firewall interface rejected");
+        // As the registry check: an exclusion on a profile not in use refuses too. COM gives a disabled adapter's GUID.
+        policy=HealthyPolicy(installed); policy.ExcludedInterfaces[2]=new object[]{HamachiGuid}; policy.ExcludedInterfaces[4]=new object[]{HamachiGuid};
+        RejectsBecause(()=>FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy,SampleAdapters()),
+            "adapter \"Hamachi\" (LogMeIn Hamachi Virtual Ethernet Adapter, disabled) in the Private and Public profiles","exclusion on an inactive profile refused, adapter named");
+        policy=HealthyPolicy(installed); policy.ExcludedInterfaces[1]=new object[0]; policy.ExcludedInterfaces[2]=new object[]{""};
+        FirewallProtection.VerifyPolicy(installed,FirewallProtection.Executables(installed),policy);
+        Check(true,"empty exclusion lists accepted");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=1;
         RejectsBecause(admit,"Windows policy prevents","ineffective local policy rejected");
         policy=HealthyPolicy(installed); policy.LocalPolicyModifyState=3;

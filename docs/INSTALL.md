@@ -191,6 +191,32 @@ and tick "Also delete my saves", which also deletes your save backups.
 Otherwise left behind in `%LOCALAPPDATA%\SoloStone`: `backups\` (your save backups) and `reports\` (logs and launch
 markers, which include your Windows user name). Delete that folder by hand if you do not want them.
 
+## "Windows Firewall is switched off for the network adapter"
+
+Windows Firewall can leave single network adapters out of a profile. Some VPN and virtual network programs do this
+when they install: LogMeIn Hamachi leaves its own adapter out of the Private and Public profiles. Traffic through
+that adapter skips the firewall, so SoloStone's block doesn't cover it, and SoloStone won't start. That holds even
+when the adapter is disabled or the profile isn't the one in use, because Windows can switch either while you play.
+
+The message names each adapter and the profiles that leave it out. To protect it again:
+
+1. Open **Windows Defender Firewall with Advanced Security** from the Start menu, or run `wf.msc`.
+2. Click **Windows Defender Firewall Properties**.
+3. On the tab of each profile the message names, click **Customize** next to *Protected network connections*, tick
+   every adapter and click **OK**.
+
+Or run this in an administrator PowerShell, with the profiles from the message:
+
+```powershell
+Set-NetFirewallProfile -Name Private,Public -DisabledInterfaceAliases NotConfigured
+```
+
+Use the command when the message says "an adapter Windows no longer lists": that is an adapter whose program was
+uninstalled without clearing it, and the Customize list doesn't show it.
+
+The program that left the adapter out may work differently afterwards. If it leaves the adapter out again, SoloStone
+stops again with the same message.
+
 ## Known issues
 
 - **Card text follows SoloStone's own file.** For the cards in the fixed set, SoloStone shows the English text from

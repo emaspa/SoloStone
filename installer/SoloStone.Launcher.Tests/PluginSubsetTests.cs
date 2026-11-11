@@ -74,7 +74,71 @@ static partial class Program
         RejectsBecause(()=>FirewallRegistry.Check(record,exes,tweak(s=>s.ProfileOff=true)),"must be enabled","firewall off refused");
         RejectsBecause(()=>FirewallRegistry.Check(record,exes,tweak(s=>s.PolicyOff=true)),"must be enabled","firewall off by policy refused");
         RejectsBecause(()=>FirewallRegistry.Check(record,exes,tweak(s=>s.PolicyNoLocalRules=true)),"Windows policy prevents","policy ignoring local rules refused");
-        RejectsBecause(()=>FirewallRegistry.Check(record,exes,tweak(s=>s.ExcludedInterface=true)),"excludes a network interface","excluded interface refused");
+        RejectsBecause(()=>FirewallRegistry.Check(record,exes,tweak(s=>s.Excluded.Add(new ExcludedAdapter { Id=HamachiGuid, Profiles={"Public"} }))),
+            "Windows Firewall is switched off for the network adapter","excluded adapter refused");
+        ExcludedAdapterTests();
+    }
+    internal const string HamachiGuid="{2FB5E7E3-E066-4584-ADA6-DFCFB867F9A0}", EthernetGuid="{284608D4-8277-4BFD-BE11-0123456789AB}", GoneGuid="{07374750-E68B-490E-9300-ABCDEFABCDEF}";
+    // Registry contents as a Windows 11 VM showed them with an adapter excluded, enabled and then disabled (issue #17).
+    internal static NetworkAdapters SampleAdapters() {
+        const string net=@"SYSTEM\CurrentControlSet\Control\Network\{4D36E972-E325-11CE-BFC1-08002BE10318}\", cls=@"SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002BE10318}\", dev=@"SYSTEM\CurrentControlSet\Enum\";
+        var values=new Dictionary<string,Dictionary<string,object>>(StringComparer.OrdinalIgnoreCase) {
+            [net+EthernetGuid+@"\Connection"]=new Dictionary<string,object>{["Name"]="Ethernet 6"},
+            [net+HamachiGuid.ToLowerInvariant()+@"\Connection"]=new Dictionary<string,object>{["Name"]="Hamachi"},
+            [net+"Descriptions"]=new Dictionary<string,object>(),
+            [cls+"0001"]=new Dictionary<string,object>{["NetCfgInstanceId"]=EthernetGuid.ToLowerInvariant(),["DriverDesc"]="Red Hat VirtIO Ethernet Adapter",["DeviceInstanceID"]=@"PCI\VEN_1AF4&DEV_1041\3&1"},
+            [cls+"0007"]=new Dictionary<string,object>{["NetCfgInstanceId"]=HamachiGuid,["DriverDesc"]="LogMeIn Hamachi Virtual Ethernet Adapter",["DeviceInstanceID"]=@"ROOT\NET\0000"},
+            [cls+"Properties"]=null, // Access denied on a real machine.
+            [dev+@"PCI\VEN_1AF4&DEV_1041\3&1"]=new Dictionary<string,object>{["FriendlyName"]="Red Hat VirtIO Ethernet Adapter",["ConfigFlags"]=0},
+            [dev+@"ROOT\NET\0000"]=new Dictionary<string,object>{["ConfigFlags"]=1},
+        };
+        Func<string,string[]> subKeys=path=>values.Keys.Where(key=>key.StartsWith(path+@"\",StringComparison.OrdinalIgnoreCase))
+            .Select(key=>key.Substring(path.Length+1).Split('\\')[0]).Distinct().ToArray();
+        return new NetworkAdapters((path,name)=>{
+            Dictionary<string,object> key;
+            if(!values.TryGetValue(path,out key)) return null;
+            if(key==null) throw new System.Security.SecurityException("Requested registry access is not allowed.");
+            object value; return key.TryGetValue(name,out value)?value:null;
+        },subKeys);
+    }
+    static void ExcludedAdapterTests() {
+        var adapters=SampleAdapters();
+        var ethernet=adapters.Describe(EthernetGuid.ToLowerInvariant());
+        Check(ethernet.Id==EthernetGuid && ethernet.Name=="Ethernet 6" && ethernet.Description=="Red Hat VirtIO Ethernet Adapter" && !ethernet.Disabled,"an excluded adapter resolves to its name and description");
+        var hamachi=adapters.Describe(HamachiGuid.Trim('{','}'));
+        Check(hamachi.Id==HamachiGuid && hamachi.Name=="Hamachi" && hamachi.Description=="LogMeIn Hamachi Virtual Ethernet Adapter" && hamachi.Disabled,"a disabled adapter resolves, from the driver entry, and says it is disabled");
+        var gone=adapters.Describe(GoneGuid);
+        Check(gone.Id==GoneGuid && gone.Name==null && gone.Description==null && !gone.Disabled,"a GUID no adapter has stays a GUID");
+        var byName=adapters.Describe("Ethernet 6");
+        Check(byName.Id==EthernetGuid && byName.Name=="Ethernet 6" && byName.Description=="Red Hat VirtIO Ethernet Adapter","COM's adapter name resolves to the same adapter");
+        var unknownName=adapters.Describe("Some VPN");
+        Check(unknownName.Id=="Some VPN" && unknownName.Name=="Some VPN" && unknownName.Description==null,"an adapter name with no registry entry is kept as it is");
+        var broken=new NetworkAdapters((path,name)=>{ throw new UnauthorizedAccessException(); },path=>{ throw new UnauthorizedAccessException(); }).Describe(HamachiGuid);
+        Check(broken.Id==HamachiGuid && broken.Name==null,"registry errors leave the GUID, not a different refusal");
+
+        Check(ExcludedAdapter.Ids(null).Count==0 && ExcludedAdapter.Ids("").Count==0 && ExcludedAdapter.Ids(new string[0]).Count==0 && ExcludedAdapter.Ids(new object[]{null," "}).Count==0,"no exclusions reads as none");
+        Check(ExcludedAdapter.Ids(HamachiGuid+","+EthernetGuid).SequenceEqual(new[]{HamachiGuid,EthernetGuid}),"Windows' comma-separated REG_SZ splits into GUIDs");
+        Check(ExcludedAdapter.Ids(new[]{HamachiGuid," "+EthernetGuid}).SequenceEqual(new[]{HamachiGuid,EthernetGuid}) && ExcludedAdapter.Ids(new object[]{"Ethernet 6"}).Single()=="Ethernet 6","multi-string and COM arrays read too");
+        Check(ExcludedAdapter.Ids(7).Single()=="7" && ExcludedAdapter.Ids(new object[]{3}).Single()=="3","an unexpected value still counts as an exclusion");
+
+        var excluded=new List<ExcludedAdapter>();
+        ExcludedAdapter.Add(excluded,"Public",new[]{HamachiGuid},adapters);
+        ExcludedAdapter.Add(excluded,"Private",new[]{HamachiGuid.ToLowerInvariant()},adapters);
+        Check(excluded.Count==1 && excluded[0].Profiles.SequenceEqual(new[]{"Public","Private"}),"one adapter excluded on two profiles is listed once");
+        Check(ExcludedAdapter.Message(excluded)=="Windows Firewall is switched off for the network adapter \"Hamachi\" (LogMeIn Hamachi Virtual Ethernet Adapter, disabled)"
+            +" in the Private and Public profiles. SoloStone's firewall rules do not cover that adapter, so SoloStone cannot start. To fix it, open Windows Defender Firewall"
+            +" with Advanced Security and click Windows Defender Firewall Properties. On the Private Profile and Public Profile tabs, click Customize next to Protected network"
+            +" connections and tick every adapter. Or run this in an administrator PowerShell: Set-NetFirewallProfile -Name Private,Public -DisabledInterfaceAliases NotConfigured",
+            "the refusal names the adapter, its profiles and the fix (the Hamachi case)");
+        ExcludedAdapter.Add(excluded,"Domain",new[]{GoneGuid},adapters);
+        ExcludedAdapter.Add(excluded,"Domain",new[]{"Ethernet 6"},adapters);
+        string many=ExcludedAdapter.Message(excluded);
+        Check(many.StartsWith("Windows Firewall is switched off for the network adapters \"Hamachi\" (LogMeIn Hamachi Virtual Ethernet Adapter, disabled) in the Private and Public profiles, "
+            +"an adapter Windows no longer lists ("+GoneGuid+") in the Domain profile and \"Ethernet 6\" (Red Hat VirtIO Ethernet Adapter) in the Domain profile. SoloStone's firewall rules do not cover those adapters",StringComparison.Ordinal)
+            && many.Contains("On the Domain Profile, Private Profile and Public Profile tabs,") && many.EndsWith("-Name Domain,Private,Public -DisabledInterfaceAliases NotConfigured",StringComparison.Ordinal),
+            "several adapters: each with its profiles, an unlisted GUID as itself, and every profile in the fix");
+        Check(Messages.FirewallRefused(ExcludedAdapter.Message(excluded)).StartsWith("The game could not verify SoloStone's firewall protection and stopped. Windows Firewall is switched off for",StringComparison.Ordinal)
+            && Messages.FirewallRefused(null).EndsWith("Fix the firewall protection, then play.",StringComparison.Ordinal),"the launcher's exit-47 message carries the check's own reason");
     }
     static string CraftPlugin(string dll,params MethodInfo[] calls) {
         var builder=new PersistedAssemblyBuilder(new AssemblyName(Path.GetFileNameWithoutExtension(dll)),typeof(object).Assembly);

@@ -127,9 +127,9 @@ static partial class Program
         // The window: a firewall refusal offers Fix firewall.
         var model=new LauncherModel();
         string host=Source("WindowsHost.cs");
-        var message=Regex.Match(host,@"case Health\.ExitFirewallRefused: return ""([^""]+)""").Groups[1].Value;
-        model.LaunchEnded(1,message);
-        Check(message.Length>0 && model.FirewallProblem,"a firewall refusal leads to the Fix firewall button");
+        Check(host.Contains("case Health.ExitFirewallRefused: return FirewallRefused(record);") && host.Contains("return Messages.FirewallRefused("),"exit 47 is worded by Messages.FirewallRefused");
+        model.LaunchEnded(1,Messages.FirewallRefused(null));
+        Check(model.FirewallProblem,"a firewall refusal leads to the Fix firewall button");
         model=new LauncherModel(); model.LaunchEnded(1,Regex.Match(host,@"case 42: return ""([^""]+)""").Groups[1].Value);
         Check(!model.FirewallProblem,"a hook failure does not");
 #endif
