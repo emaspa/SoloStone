@@ -41,10 +41,9 @@ namespace SabberStoneCore.CardSets.Client.Sets
                     int health = candidates.Min(m => m.Health);
                     var victim = ctx.SampleDistinct(candidates.Where(m => m.Health == health).ToArray(), 1)[0];
                     int amount = Math.Min(Amount(source), victim.BaseHealth);
-                    int current = victim.Health;
+                    // A Health enchantment, not damage: the victim keeps its damage, so its current Health falls with its
+                    // maximum (a 1/3 minion with 2 damage that loses 1 dies), and the hero's maximum and current Health rise.
                     ctx.GiveBuff(victim.Id, "EDR_810e", amount);
-                    // Transfer maximum Health, clamping current Health rather than dealing damage.
-                    victim.Damage = Math.Max(0, victim.BaseHealth - current);
                     ctx.GiveBuff(c.Hero.Id, "EDR_810e2", amount);
                 })
             } };
