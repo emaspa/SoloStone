@@ -11,7 +11,7 @@ internal sealed class SecretOption
     internal string Id;
     internal string Name;
     internal int Cost;
-    internal string Text;
+    internal bool Legendary;
 }
 
 internal sealed class SecretRow

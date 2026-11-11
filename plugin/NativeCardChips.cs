@@ -181,7 +181,10 @@ internal static class NativeCardChips
                     var rect = CardRect(power);
                     if (rect.width > 0)
                     {
-                        var area = Pill(imbued, rect.center.x, rect.yMin - pillHeight / 2f, size * 6f);
+                        // Above the cost gem, which stands over the top of the hero power's frame, so the chip doesn't cover the cost.
+                        var gem = PartRect(power, power.GetActor()?.m_manaObject);
+                        float top = gem.width > 0 ? Mathf.Min(rect.yMin, gem.yMin) - pillHeight - size * .15f : rect.yMin - pillHeight / 2f;
+                        var area = Pill(imbued, rect.center.x, Mathf.Max(0f, top), size * 6f);
                         if (area.Contains(Event.current.mousePosition)) { hovered = imbued; hoveredArea = area; }
                     }
                 }
@@ -216,6 +219,17 @@ internal static class NativeCardChips
         Camera view = CameraUtils.FindFirstByLayerMask(1 << actor.gameObject.layer);
         if (view == null) return Rect.zero;
         Rect screen = DeckLayout.ScreenRect(actor.gameObject, view);
+        return screen.width <= 0 ? Rect.zero : new Rect(screen.xMin, Screen.height - screen.yMax, screen.width, screen.height);
+    }
+
+    // One part of a card's actor (its cost gem, say) in GUI coordinates; empty when it has no part or nothing of it is drawn.
+    private static Rect PartRect(Card card, GameObject part)
+    {
+        var actor = card?.GetActor();
+        if (actor == null || part == null || !part.activeInHierarchy) return Rect.zero;
+        Camera view = CameraUtils.FindFirstByLayerMask(1 << actor.gameObject.layer);
+        if (view == null) return Rect.zero;
+        Rect screen = DeckLayout.ScreenRect(part, view);
         return screen.width <= 0 ? Rect.zero : new Rect(screen.xMin, Screen.height - screen.yMax, screen.width, screen.height);
     }
 

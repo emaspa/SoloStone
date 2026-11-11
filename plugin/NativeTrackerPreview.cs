@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 
-// The full card behind a hovered tracker tile: while the mouse is on a card tile in the deck tracker or the opponent tracker, the
-// game's own card model (built as NativeCardHistory builds its cards) shows beside that panel at half the size of the game's
-// enlarged card, level with the tile and kept on screen. Beside, not over: the panels are drawn after the game's cameras, so a
+// The full card behind a hovered tracker tile: while the mouse is on a card tile in the deck tracker, the opponent tracker or the
+// secret helper, the game's own card model (built as NativeCardHistory builds its cards) shows beside that panel at half the size of
+// the game's enlarged card, level with the tile and kept on screen. Beside, not over: the panels are drawn after the game's cameras, so a
 // model under a panel would be hidden by it. The model goes when nothing drew it for two frames (Sweep). An error turns only the
 // preview off for the session.
 internal static class NativeTrackerPreview
@@ -18,6 +18,9 @@ internal static class NativeTrackerPreview
     private static BepInEx.Logging.ManualLogSource log;
 
     internal static void Initialize(BepInEx.Logging.ManualLogSource logger) => log = logger;
+
+    // The room the card takes beside a panel: its width and the gap.
+    internal static float Width => Screen.height * (HeightShare * WidthToHeight + .01f);
 
     // Called every frame from NativeMatchTracker.Tick.
     internal static void Sweep()

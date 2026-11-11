@@ -177,11 +177,11 @@ These overlays show during a match:
 - **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
   counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
   Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. The last line says
-  how many cards are in your hand. On by default.
+  how many cards are in your hand and in your deck, as in "4 cards in hand · 25 in deck". On by default.
 - **Opponent Tracker** lists the opponent's cards you have seen down the left edge: cards from their deck that they
   played, summoned or discarded, or that were revealed some other way, with how many copies. Cards they created during
-  the match and played come in a separate "Created" list. The line under their name gives their class and how many
-  cards are left in their deck, and the last line how many are in their hand. It shows only what the game showed you,
+  the match and played come in a separate "Created" list. The line under their name gives their class, and the last
+  line how many cards are in their hand and in their deck. It shows only what the game showed you,
   so a Secret appears once it triggers and nothing in their hand is listed. On by default.
 - **Attack Counter** shows how much damage each side's characters can still attack for this turn, or could on its
   next turn: left of your hero, under the opponent's portrait. Off by default.
@@ -194,10 +194,10 @@ These overlays show during a match:
   saw that card. On by default.
 - **Counter Chips** puts a chip on a hero power that was Imbued, with how many times, and beside a quest or sidequest
   with its progress. On by default.
-- **Secret Helper** lists the Secrets the opponent's class could have, left of their hero, while they have one hidden.
-  Before each of your actions the game tries that action against every candidate. When a candidate would have gone off and
-  their Secret stayed hidden, it is crossed out. Hover a name for its text. If every candidate is crossed out, the
-  Secret came from another class. On by default.
+- **Secret Helper** lists the Secrets the opponent's class could have as card tiles, left of their hero, while they have
+  one hidden. Before each of your actions the game tries that action against every candidate. When a candidate would have
+  gone off and their Secret stayed hidden, its tile is greyed out. Hover a tile to see the full card. If every tile is
+  greyed out, the Secret came from another class. On by default.
 - **Card History** applies to cards that resurrect minions that died, recast the spells you cast, or repeat the
   Battlecries you played. Hovering one shows the cards it would draw on so far, at 40% size, beside it. It reads
   the card's text, so an unusual wording may show nothing. On by default.

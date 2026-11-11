@@ -18,8 +18,8 @@ using static MatchOverlay;
 // The opponent tracker: a panel down the left edge listing the opponent's cards the player has seen (OpponentTrackerRows), from the
 // engine's history as the player's fair view shows it (HistoryFacts.ProjectForFairView, the view the NPC plays from, here for the
 // player's side): played, summoned, discarded and otherwise revealed cards from their starting deck, then the cards they created and
-// played. A Secret stays hidden until it is revealed; nothing in their hand or deck shows. Under the name: their hand and deck
-// counts. It fails closed on its own: an error turns only the opponent tracker off for the session.
+// played. A Secret stays hidden until it is revealed; nothing in their hand or deck shows. Under the name: their class; the last
+// line: their hand and deck counts, as on the deck tracker's. It fails closed on its own: an error turns only the opponent tracker off for the session.
 // The card chips (NativeCardChips), the secret helper (NativeSecretHelper) and the card history (NativeCardHistory) refresh and draw with them.
 internal static class NativeMatchTracker
 {
@@ -263,16 +263,15 @@ internal static class NativeMatchTracker
             if (row < height * TextShare * .75f) { row = available / (lines + 1.6f + extra); line = row; }
             Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
             float pad = line * .35f;
-            string remaining = view.Remaining + (view.Remaining == 1 ? " card" : " cards");
             if (!ReferenceEquals(measuredView, view) || measuredRow != styleRow)
             {
                 nameWidth = view.Unknown > 0 ? Measure("Unknown card", name).x : 0f;
                 foreach (var entry in view.Rows) nameWidth = Mathf.Max(nameWidth, Measure(entry.Name, name).x);
-                // Row(): cost badge, a gap, the name, then the count column. The header: the deck's name, a gap, the card count.
+                // Row(): cost badge, a gap, the name, then the count column. The header: the deck's name. The last line: the counts.
                 float needed = Mathf.Max(pad * 2 + row * .86f + line * .35f + nameWidth + row * 1.2f,
-                    pad * 2 + Measure(deckName, header).x + line * .6f + Measure("30 cards", header).x);
+                    pad * 2 + Mathf.Max(Measure(deckName, header).x, Measure(Counts(10, 99), name).x));
                 drawnWidth = Mathf.Clamp(needed, height * RowShare * WidthRows, height * RowShare * MaxWidthRows);
-                title = Fit(deckName, drawnWidth - pad * 2 - line * .6f - Measure(remaining, header).x, header);
+                title = Fit(deckName, drawnWidth - pad * 2, header);
                 measuredView = view; measuredRow = styleRow;
             }
             float column = line * ColumnRows, listWidth = drawnWidth - pad * 2;
@@ -282,7 +281,6 @@ internal static class NativeMatchTracker
             GUI.DrawTexture(new Rect(x, top, panelWidth, panelHeight), panel);
             float y = top + pad, inner = panelWidth - pad * 2;
             Text(new Rect(x + pad, y, inner, line * 1.3f), title, header, Align.Left);
-            Text(new Rect(x + pad, y, inner, line * 1.3f), remaining, header, Align.Right);
             y += line * 1.3f;
             if (statsShown)
             {
@@ -315,14 +313,14 @@ internal static class NativeMatchTracker
                     : "Win rates over " + stats.TrackedGames + (stats.TrackedGames == 1 ? " game" : " games") + " (" + settings.StatsKey + " hides them)", small, Align.Left);
                 y += line * StatsLine;
             }
-            Text(new Rect(x + pad, y, inner, line), InHand(friendlyHand), name, Align.Left);
+            Text(new Rect(x + pad, y, inner, line), Counts(friendlyHand, view.Remaining), name, Align.Left);
             Preview(new Rect(x, top, panelWidth, panelHeight), true);
         }
         catch (Exception error) { Fail(error); }
     }
 
-    // The opponent tracker's panel, down the left edge: the opponent's name, their hand and deck counts, the cards seen from their
-    // deck, then the ones they created. Sized like the deck tracker's, shrinking its rows to fit.
+    // The opponent tracker's panel, down the left edge: the opponent's name and class, the cards seen from their deck, the ones they
+    // created, then their hand and deck counts. Sized like the deck tracker's, shrinking its rows to fit.
     private static OpponentTrackerView measuredOpponent;
     private static int measuredOpponentRow;
     private static float opponentWidth;
@@ -341,12 +339,13 @@ internal static class NativeMatchTracker
         if (row < height * TextShare * .75f) { row = available / (lines + 1.6f + extra); line = row; }
         Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
         float pad = line * .35f;
-        string counts = (string.IsNullOrEmpty(opponentClass) ? "" : opponentClass + "  ·  ") + "Deck " + seen.Remaining;
+        string counts = opponentClass ?? "";
         if (!ReferenceEquals(measuredOpponent, seen) || measuredOpponentRow != styleRow)
         {
             float names = Measure("No cards seen yet", note).x;
             foreach (var entry in seen.Deck.Concat(seen.Created)) names = Mathf.Max(names, Measure(entry.Name, name).x);
-            float needed = Mathf.Max(pad * 2 + row * .86f + line * .35f + names + row * 1.2f, pad * 2 + Measure(counts, small).x);
+            float needed = Mathf.Max(pad * 2 + row * .86f + line * .35f + names + row * 1.2f,
+                pad * 2 + Mathf.Max(Measure(counts, small).x, Measure(Counts(10, 99), name).x));
             opponentWidth = Mathf.Clamp(needed, height * RowShare * WidthRows, height * RowShare * MaxWidthRows);
             opponentTitle = Fit(opponentName, opponentWidth - pad * 2, header);
             measuredOpponent = seen; measuredOpponentRow = styleRow;
@@ -367,11 +366,12 @@ internal static class NativeMatchTracker
             y += line * StatsLine;
             foreach (var entry in seen.Created) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); Hover(entry.Id, new Rect(x + pad, y, listWidth, row)); y += row; }
         }
-        Text(new Rect(x + pad, y, listWidth, line), InHand(seen.Hand), name, Align.Left);
+        Text(new Rect(x + pad, y, listWidth, line), Counts(seen.Hand, seen.Remaining), name, Align.Left);
         Preview(new Rect(x, top, opponentWidth, panelHeight), false);
     }
 
-    private static string InHand(int count) => count + (count == 1 ? " card in hand" : " cards in hand");
+    // A tracker's last line: "4 cards in hand  ·  25 in deck".
+    private static string Counts(int hand, int deck) => hand + (hand == 1 ? " card in hand" : " cards in hand") + "  ·  " + deck + " in deck";
 
     // The tile under the mouse in this frame's panels, shown full size beside its panel (NativeTrackerPreview).
     private static string hoveredId;
@@ -439,21 +439,35 @@ internal static class NativeMatchTracker
     }
 
     // A card tile for another screen (NativeStatsScreen): the tracker's row at that height, with text sized to match.
-    internal static void Tile(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)
+    // `dim` greys a tile out without a count box (a ruled-out Secret).
+    internal static void Tile(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary,
+        bool dim = false)
     {
         if (settings == null) return;
         Styles(Mathf.Max(8, Mathf.RoundToInt(row * TextShare / RowShare)));
-        Row(x, y, width, row, id, cost, text, count, legendary);
+        Row(x, y, width, row, id, cost, text, count, legendary, dim);
+    }
+
+    // How wide a list of single-copy tiles at this height must be for its longest name: Row()'s cost badge and gap, the name, and a
+    // little room at the end.
+    internal static float TileWidth(float row, IEnumerable<string> names)
+    {
+        if (settings == null) return 0f;
+        Styles(Mathf.Max(8, Mathf.RoundToInt(row * TextShare / RowShare)));
+        float widest = 0f;
+        foreach (string text in names) widest = Mathf.Max(widest, Measure(text, name).x);
+        return widest + row * 1.4f;
     }
 
     // One card as a tile: a solid bar, the cost badge on the left, the card's art on the right fading out into the bar, the name over
     // both, and the copies left in a box at the right end (none for a single copy).
-    private static void Row(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)
+    private static void Row(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary,
+        bool dim = false)
     {
-        float alpha = count > 0 ? 1f : .38f, gap = row * TileGap, top = y + gap / 2, tall = row - gap, size = tall * .82f, inset = (tall - size) / 2f;
+        float alpha = count > 0 && !dim ? 1f : .38f, gap = row * TileGap, top = y + gap / 2, tall = row - gap, size = tall * .82f, inset = (tall - size) / 2f;
         GUI.color = Color.white;
         GUI.DrawTexture(new Rect(x, top, width, tall), tile);
-        float box = count != 1 ? tall : 0f;
+        float box = count != 1 && !dim ? tall : 0f;
         bool art = false;
         if (settings.CardArt && id != null && CardArt.TryGet(id, out var picture))
         {
@@ -470,7 +484,7 @@ internal static class NativeMatchTracker
             GUI.DrawTexture(new Rect(x, top, width, tall), tile);
         }
         GUI.color = new Color(1f, 1f, 1f, alpha);
-        GUI.DrawTexture(new Rect(x + inset, top + inset, size, size), count > 0 ? badge : zeroBadge);
+        GUI.DrawTexture(new Rect(x + inset, top + inset, size, size), alpha < 1f ? zeroBadge : badge);
         Text(new Rect(x + inset, top, size, tall), cost, number, Align.Center);
         Color nameColor = legendary ? new Color(1f, .74f, .3f) : new Color(.95f, .95f, .97f);
         name.normal.textColor = nameColor;

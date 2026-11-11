@@ -172,6 +172,7 @@ F	Assembly-CSharp	AbsDeckPickerTrayDisplay	m_heroName	*
 F	Assembly-CSharp	AbsDeckPickerTrayDisplay	m_heroPowerActor	*
 F	Assembly-CSharp	AbsDeckPickerTrayDisplay	m_heroPowerContainer	*
 F	Assembly-CSharp	AbsDeckPickerTrayDisplay	m_playButton	*
+F	Assembly-CSharp	Actor	m_manaObject	UnityEngine.GameObject
 F	Assembly-CSharp	AlertPopup	m_alertText	*
 F	Assembly-CSharp	AlertPopup	m_body	NineSliceElement
 F	Assembly-CSharp	AlertPopup	m_buttonContainer	MultiSliceElement
