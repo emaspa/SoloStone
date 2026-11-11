@@ -16,7 +16,9 @@ namespace SabberStoneCore.Actions
         public const GameTag ReplaceHeroDamage = (GameTag)31367;
         internal const GameTag DeathPasses = (GameTag)31368;
         internal const GameTag PreparationDepth = (GameTag)31369;
-        public const GameTag FireImmune = (GameTag)4128;
+        // Unnamed client tag. The card data puts it on Fyrakk the Blazing, Captain Crowley, Tortolla, The Great Dracorex, Razidir and
+        // some spells and locations; its meaning is unknown and it is not fire immunity, so no rule reads it. Silence still clears it.
+        public const GameTag Tag4128 = (GameTag)4128;
         public static bool IsInternalTag(GameTag tag) => (int)tag >= 31360 && (int)tag <= 31369;
 
         private static bool Active(Minion minion) => !minion.IsSilenced && !minion.Untouchable;
@@ -25,12 +27,10 @@ namespace SabberStoneCore.Actions
 
         public static int AttackLimit(ICharacter source) => source[GameTag.MEGA_WINDFURY] > 0 ? 4 : source.HasWindfury ? 2 : 1;
 
-        // The card data also puts tag 4128 on Captain Crowley, Tortolla, The Great Dracorex, Razidir and some spells and
-        // locations; only Fyrakk is Immune to Fire spells. The tag still switches it off when Fyrakk is silenced.
+        // Fyrakk the Blazing: "Immune to Fire spells." It is his text, not a tag, so silence switches it off.
         public static bool PreventsFire(CardType sourceType, int school, ICharacter target) =>
-            sourceType == CardType.SPELL && school == 2 && target[FireImmune] > 0
-            && target.Card.AssetId == CardSets.Client.Sets.FyrakkTheBlazing.DbfId
-            && !(target is Minion minion && minion.IsSilenced);
+            sourceType == CardType.SPELL && school == 2
+            && target is Minion minion && minion.Card.AssetId == CardSets.Client.Sets.FyrakkTheBlazing.DbfId && !minion.IsSilenced;
 
         internal static int Outgoing(IPlayable source, int damage)
         {

@@ -275,7 +275,7 @@ namespace SabberStoneCore.Model.Entities
 				if (_logging)
 					Game.Log(LogLevel.DEBUG, BlockType.TRIGGER, "Entity", !Game.Logging? "":$"{this} set data {t} to {value}");
 				if (_history && ((int)t < 1000 || t == GameTag.TAG_SCRIPT_DATA_NUM_6 || t == Actions.TemporaryRules.Temporary || t == GameTag.DORMANT || t == GameTag.DORMANT_VISUAL || t == GameTag.DORMANT_AWAKENED_THIS_TURN || t == GameTag.REBORN || t == GameTag.HAS_BEEN_REBORN
-                    || t == GameTag.REWIND || t == GameTag.USED_REWIND || t == Actions.CombatRules.FireImmune
+                    || t == GameTag.REWIND || t == GameTag.USED_REWIND || t == Actions.CombatRules.Tag4128
                     || t == Actions.BonusEffects.Keyword1 || t == Actions.BonusEffects.Keyword2
                     || t == GameTag.PREPARE || t == GameTag.DECK_ACTION_COST || t == GameTag.PREPARING
                     || t == GameTag.LOCATION_ACTION_COST || t == GameTag.LOCATION_ACTION_COOLDOWN

@@ -137,7 +137,7 @@ namespace SabberStoneCore.Model.Entities
 			HasWindfury = false;
             if (this[GameTag.MEGA_WINDFURY] > 0) this[GameTag.MEGA_WINDFURY] = 0;
             if (this[GameTag.IMMUNE_WHILE_ATTACKING] > 0) this[GameTag.IMMUNE_WHILE_ATTACKING] = 0;
-            if (this[Actions.CombatRules.FireImmune] > 0) this[Actions.CombatRules.FireImmune] = 0;
+            if (this[Actions.CombatRules.Tag4128] > 0) this[Actions.CombatRules.Tag4128] = 0;
 			HasDivineShield = false;
 			HasStealth = false;
 			HasDeathrattle = false;

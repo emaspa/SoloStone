@@ -69,7 +69,7 @@ public sealed class NativeMatch
         (GameTag)340, // COUNTER: EntityBase.HasCounter and keyword help.
         (GameTag)363, // POISONOUS: EntityBase.IsPoisonous enables poison presentation.
         GameTag.AFFECTED_BY_SPELL_POWER, // EntityBase.IsAffectedBySpellPower controls text scaling.
-        (GameTag)4128, // Fyrakk: direct Fire-spell immunity, never global IMMUNE.
+        (GameTag)4128, // Unnamed card-data tag (Fyrakk, Captain Crowley and others), mirrored as is. Not fire immunity.
         GameTag.IMMUNE_WHILE_ATTACKING, // AttackSpellController controls attack/death visuals.
         GameTag.HERO_POWER, // Card.CreateCardsInTooltip selects the hero power preview.
         GameTag.FORGETFUL, // Entity.GetPrioritizedBaubleSpellType and target arrows.
