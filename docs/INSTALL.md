@@ -296,9 +296,10 @@ stops again with the same message.
 
 ## Known issues
 
-- **Card text follows SoloStone's own file.** For the cards in the fixed set, SoloStone shows the English text from
-  its own card file on any client and in any client language. After Hearthstone balance patches, that text can
-  differ from your client's or the live game's. Cards outside the set show your client's own text.
+- **Card text follows SoloStone's own file.** For the cards in the fixed set and the cards they create, SoloStone
+  shows the English text from its own card file on any client and in any client language. After Hearthstone balance
+  patches, that text can differ from your client's or the live game's. Cards SoloStone does not play show your
+  client's own text.
 - **Hearthstone updates:** see "Your Hearthstone version". A new major version blocks SoloStone until a new release.
 - **Quit Battle.net first.** Do not run your normal Hearthstone at the same time as SoloStone. Running both together
   has not been tested.

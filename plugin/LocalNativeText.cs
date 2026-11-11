@@ -70,6 +70,18 @@ internal static class LocalNativeText
             try { Add(result, Cards.FromId(id)); }
             catch { }
         }
+        // Every other card the engine plays: tokens, generated cards and enchantments (Kazakus' trial parts, the cracked
+        // Eggs of Khelos). A newer client has their post-patch text, but the engine plays the fixed set. Cards the
+        // transport renames keep the lists above.
+        foreach (EngineCard card in Cards.All)
+        {
+            try
+            {
+                if (card.Implemented && !result.ContainsKey(card.Id) && NativeMatch.TransportCardId(card.Id) == card.Id)
+                    result[card.Id] = card.Text;
+            }
+            catch { }
+        }
         return result;
     }
 
