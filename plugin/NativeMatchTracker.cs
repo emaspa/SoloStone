@@ -451,7 +451,7 @@ internal static class NativeMatchTracker
     private static void Row(float x, float y, float width, float row, string id, string cost, string text, int count, bool legendary)
     {
         float alpha = count > 0 ? 1f : .38f, gap = row * TileGap, top = y + gap / 2, tall = row - gap, size = tall * .82f, inset = (tall - size) / 2f;
-        GUI.color = new Color(1f, 1f, 1f, alpha);
+        GUI.color = Color.white;
         GUI.DrawTexture(new Rect(x, top, width, tall), tile);
         float box = count != 1 ? tall : 0f;
         bool art = false;
@@ -462,6 +462,14 @@ internal static class NativeMatchTracker
             GUI.DrawTexture(new Rect(area.x - 1f, area.y, area.width * FadeShare + 1f, area.height), fade);
             art = true;
         }
+        // A card with no copies left is dimmed by a veil of the tile's colour over the bar and art, not by drawing them see-through:
+        // a see-through fade no longer hid the art's left edge, so the art started at a hard line.
+        if (alpha < 1f)
+        {
+            GUI.color = new Color(1f, 1f, 1f, 1f - alpha);
+            GUI.DrawTexture(new Rect(x, top, width, tall), tile);
+        }
+        GUI.color = new Color(1f, 1f, 1f, alpha);
         GUI.DrawTexture(new Rect(x + inset, top + inset, size, size), count > 0 ? badge : zeroBadge);
         Text(new Rect(x + inset, top, size, tall), cost, number, Align.Center);
         Color nameColor = legendary ? new Color(1f, .74f, .3f) : new Color(.95f, .95f, .97f);
