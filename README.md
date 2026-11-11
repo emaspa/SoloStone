@@ -33,6 +33,9 @@ You need Windows 10 or 11 (64-bit), Hearthstone installed through Battle.net, an
 
 Something went wrong? Tell us on [Discord](https://discord.gg/e45QgKHmC2). The full guide is in [INSTALL.md](docs/INSTALL.md).
 
+**On Linux?** The game runs under Wine, started by a native Linux launcher that cuts the copy off from the network.
+Download **`SoloStone-linux-<version>.tar.gz`** and follow [LINUX.md](docs/LINUX.md).
+
 ## What it is
 
 - **A mod for a separate copy of your game.** SoloStone copies the Hearthstone you already have, adds its own files
@@ -102,7 +105,8 @@ app and your account are never touched.
 ## What to expect
 
 - **This is an alpha.** It has rough edges and has been tested on few machines.
-- **Windows only for now**, tested with Hearthstone client 37.0.0.254477. Steam Deck and Linux are not supported yet.
+- **Windows first**, tested with Hearthstone client 37.0.0.254477. Linux works through Wine. It is new, and we tested
+  it on one machine: see [LINUX.md](docs/LINUX.md). Steam Deck is not supported yet.
 - **Windows asks for permission once**, to add the firewall rules.
 - **Hearthstone updates:**
 
@@ -147,7 +151,7 @@ Chat: [Discord](https://discord.gg/e45QgKHmC2)
 |---|---|
 | `engine/` | The rules engine: a modified SabberStone (AGPL) with the newer card mechanics |
 | `plugin/` | The plugin that runs inside the game: game messages, screens, opponents, saves |
-| `installer/` | The setup and the launcher (`SoloStone.exe`), with its tests |
+| `installer/` | The setup and the launcher (`SoloStone.exe`), the Linux launcher (`SoloStone.Linux`), with their tests |
 | `facts/` | The card data for the fixed card set, one file per meta |
 | `data/` | Opponent decks and personalities, card pools, shop, packs and progression data |
 

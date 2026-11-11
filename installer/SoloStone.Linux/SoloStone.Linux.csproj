@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The native Linux launcher. The game is still the Windows client: it runs under Wine, in a network namespace (WinePrefix.cs).
+       It shares the launcher's platform-free code with the Windows launcher and the tests; only the host and the command line are its own. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><LangVersion>latest</LangVersion>
+    <AssemblyName>solostone</AssemblyName><RootNamespace>SoloStone</RootNamespace><Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo><Deterministic>true</Deterministic><InvariantGlobalization>true</InvariantGlobalization>
+    <DefineConstants>$(DefineConstants);SOLOSTONE_LINUX</DefineConstants>
+    <!-- Windows-only APIs in the shared files are behind Windows checks at run time; the analyzer can't see that. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <Import Project="../BuildInputs.targets" />
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="[2.6.2]" />
+    <EmbeddedResource Include="$(TestedClientFile)" LogicalName="tested-client.json" />
+    <Compile Include="../SoloStone.Launcher/Core.cs" Link="Shared/Core.cs" />
+    <Compile Include="../SoloStone.Launcher/CoreLauncher.cs" Link="Shared/CoreLauncher.cs" />
+    <Compile Include="../SoloStone.Launcher/WindowsFirewall.cs" Link="Shared/WindowsFirewall.cs" />
+    <Compile Include="../SoloStone.Launcher/RuntimeProtection.cs" Link="Shared/RuntimeProtection.cs" />
+    <Compile Include="../SoloStone.Launcher/Fs.cs" Link="Shared/Fs.cs" />
+    <Compile Include="../SoloStone.Launcher/Install.cs" Link="Shared/Install.cs" />
+    <Compile Include="../SoloStone.Launcher/ClientPolicy.cs" Link="Shared/ClientPolicy.cs" />
+    <Compile Include="../SoloStone.Launcher/Minisign.cs" Link="Shared/Minisign.cs" />
+    <Compile Include="../SoloStone.Launcher/ReleaseManifest.cs" Link="Shared/ReleaseManifest.cs" />
+    <Compile Include="../SoloStone.Launcher/UpdateClient.cs" Link="Shared/UpdateClient.cs" />
+    <Compile Include="../SoloStone.Launcher/UpdateEngine.cs" Link="Shared/UpdateEngine.cs" />
+    <Compile Include="../SoloStone.Launcher/LaunchGate.cs" Link="Shared/LaunchGate.cs" />
+    <Compile Include="../SoloStone.Launcher/ClientIdentity.cs" Link="Shared/ClientIdentity.cs" />
+    <Compile Include="../SoloStone.Launcher/LabGuard.cs" Link="Shared/LabGuard.cs" />
+    <Compile Include="../SoloStone.Launcher/Gui/Texts.cs" Link="Shared/Texts.cs" />
+    <Compile Include="../SoloStone.Launcher/Gui/Messages.cs" Link="Shared/Messages.cs" />
+  </ItemGroup>
+</Project>

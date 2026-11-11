@@ -43,6 +43,54 @@ namespace SoloStone
         public static string[] Executables(InstallRecord record) => Safety.Tree(record.Client)
             .Where(p=>p.EndsWith(".exe",StringComparison.OrdinalIgnoreCase)).ToArray();
     }
+    // Linux runs the Windows client under Wine, which has no Windows Firewall. There the Linux launcher (installer/SoloStone.Linux) starts the whole
+    // Wine session, wineserver included, in a network namespace whose only interface is loopback. Wine opens files in wineserver, so /proc/net/dev
+    // read through Wine is wineserver's namespace: the one every connection of the game goes through (Wine creates sockets there too). A wineserver
+    // started outside the namespace shows the computer's interfaces here, so it is refused. The plugin's network canary (OfflineProbe) runs after
+    // this and, under Wine, also requires that a public address has no route at all. That part stays in the plugin: no shared file holds network code.
+    public static class NetworkIsolation
+    {
+        public const string StartFromScript="On Linux, start the game only from the SoloStone launcher, which runs it without network access.";
+        // Wine's own path to a Unix file first: it works without the Z: drive.
+        static readonly string[] DevFiles={@"\\?\unix\proc\net\dev",@"Z:\proc\net\dev"};
+        [DllImport("kernel32.dll",CharSet=CharSet.Unicode)] static extern IntPtr GetModuleHandleW(string name);
+        [DllImport("kernel32.dll",CharSet=CharSet.Ansi,BestFitMapping=false)] static extern IntPtr GetProcAddress(IntPtr module,string name);
+        // Wine's ntdll exports wine_get_version; Windows' does not. Off Windows (the tests) kernel32 is missing and this is false.
+        public static bool UnderWine { get {
+            try { IntPtr ntdll=GetModuleHandleW("ntdll.dll"); return ntdll!=IntPtr.Zero && GetProcAddress(ntdll,"wine_get_version")!=IntPtr.Zero; }
+            catch(Exception) { return false; }
+        } }
+        public static void Verify() {
+            string text=null;
+            foreach(string path in DevFiles) {
+                try { text=File.ReadAllText(path); break; }
+                catch(Exception e) when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException) { }
+            }
+            Check(text);
+        }
+        // Pure. netDev is the text of /proc/net/dev.
+        public static void Check(string netDev) {
+            string[] names=Interfaces(netDev);
+            if(names==null) throw new InvalidOperationException("SoloStone could not read this computer's network interfaces. "+StartFromScript);
+            string[] other=names.Where(name=>name!="lo").ToArray();
+            if(other.Length!=0) throw new InvalidOperationException("SoloStone found network access ("+string.Join(", ",other)+"). "+StartFromScript);
+        }
+        // The interface names in /proc/net/dev, or null for anything that does not read as that file. Loopback is always there.
+        public static string[] Interfaces(string netDev) {
+            if(netDev==null) return null;
+            string[] lines=netDev.Replace("\r","").Split('\n');
+            if(lines.Length<3 || !lines[0].StartsWith("Inter-|",StringComparison.Ordinal) || !lines[1].StartsWith(" face |",StringComparison.Ordinal)) return null;
+            var names=new List<string>();
+            for(int i=2;i<lines.Length;i++) {
+                string line=lines[i].Trim();
+                if(line.Length==0) continue;
+                int colon=line.IndexOf(':');
+                if(colon<=0) return null;
+                names.Add(line.Substring(0,colon).Trim());
+            }
+            return names.Contains("lo")?names.ToArray():null;
+        }
+    }
     // What Windows stores for one firewall rule: "v2.33|Action=Block|Active=TRUE|Dir=Out|App=...|Name=...|".
     public sealed class FirewallRuleText
     {

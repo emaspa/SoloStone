@@ -17,7 +17,7 @@ The card and rules test suites are not published yet. What is here are the launc
 | .NET SDK | **10.0.402**. `global.json` pins it and refuses any other version, so install exactly that one. |
 | Python 3 | On your `PATH` as `python3`, for `installer/stage.py` and the loader fetch tool. The engine and plugin builds themselves need only the .NET SDK. |
 | Git | `stage.py` records the source revision with it, so build from a Git checkout. |
-| Windows 10 or 11 | Only for the last step (the installer). Steps 1 to 4 also run on macOS (tested); Linux is untested. |
+| Windows 10 or 11 | Only for the Windows installer (step 5). Steps 1 to 4 also run on macOS and Linux (both tested), and so does the Linux download (step 6). |
 | Hearthstone client | The version SoloStone was tested with (named in `installer/tested-client.json`). Its `Hearthstone_Data\Managed` folder is the plugin's reference set. A different client may not compile or may not match our release. |
 | Internet access | `stage.py` downloads Doorstop 4.5.0, BepInEx 5.4.23.5 and the Mono class libraries named in `installer/loader-inputs.json` and checks every file against its recorded SHA-256. Nothing is taken from your machine for these. Origins and licences are in [NOTICE](../NOTICE). |
 | Inno Setup 6.4.3 | `build.ps1` restores it from NuGet (`Tools.InnoSetup`), or pass your own `ISCC.exe` with `-Iscc`. |
@@ -124,6 +124,24 @@ where this source is (made from `installer/SOURCE.template.txt` and the `--repo`
 
 Without `-Staged`, `build.ps1` builds the launcher, runs the launcher tests and builds the plugin itself. It then
 needs the reference folders from step 1, or `-References <folder>` for a folder that holds `game\` and `bepinex\`.
+
+## 6. The Linux download
+
+The Linux launcher (`installer/SoloStone.Linux`) is a native .NET program; the game runs under Wine. It shares the
+Windows launcher's install, update and save code and adds its own host: the Wine prefix, the network namespace and
+the command line. On Linux, `package_linux.py` builds it from the stage folder of step 4 and puts beside it the same
+payload as `build.ps1`. It checks the loader files against `installer/loader-inputs.json` again, and it downloads
+DXVK, which runs the game's Direct3D 11 on Vulkan, and checks it against `installer/linux-inputs.json`. It downloads
+Liberation Sans the same way and renames it LegacyRuntime, the family name Unity looks for when it loads its built-in
+font; the font's licence doesn't let a modified copy keep the Liberation name. Pass `--cache <folder>` to keep the
+downloads.
+
+```text
+python3 installer/package_linux.py --staged <stage folder> --version <version> --out <output folder>
+```
+
+It writes `SoloStone-linux-<version>/` and `SoloStone-linux-<version>.tar.gz` into the output folder, which must be
+outside your checkout. The launcher is self-contained, so players need no .NET installed.
 
 ## Reproducing a release
 

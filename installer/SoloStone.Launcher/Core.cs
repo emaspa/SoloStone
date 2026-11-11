@@ -401,6 +401,13 @@ namespace SoloStone
             Hashes.Verify(folder,Files);
         }
     }
+    // install.json's paths are the game's spelling: the plugin reads them inside the game. The native Linux launcher works with Unix paths and
+    // the game sees its Wine prefix's C: drive, so that launcher maps the paths here, where a record is read or written. Unchanged on Windows.
+    public static class RecordPaths
+    {
+        public static Func<string,string> ToDisk=path=>path, FromDisk=path=>path;
+        internal static string Map(string path,Func<string,string> map) => path==null?null:map(path);
+    }
     [DataContract] public sealed class InstallRecord
     {
         public const string Marker=".solostone-client"; public const int CurrentSchema=2;
@@ -416,6 +423,11 @@ namespace SoloStone
         // Hashes of the two data files setup patched (ClientIdentity). Not in Files: that is checked against the unpatched source too. Null on a copy from before the patch existed.
         [DataMember(Name="identityFiles")] public Dictionary<string,string> IdentityFiles;
         public string Client => ClientPath;
+#if !SOLOSTONE_PLUGIN
+        [OnSerializing] void ToDisk(StreamingContext context) { Root=RecordPaths.Map(Root,RecordPaths.ToDisk); Source=RecordPaths.Map(Source,RecordPaths.ToDisk); ClientPath=RecordPaths.Map(ClientPath,RecordPaths.ToDisk); }
+        [OnSerialized] void Restore(StreamingContext context) { FromDisk(context); }
+        [OnDeserialized] void FromDisk(StreamingContext context) { Root=RecordPaths.Map(Root,RecordPaths.FromDisk); Source=RecordPaths.Map(Source,RecordPaths.FromDisk); ClientPath=RecordPaths.Map(ClientPath,RecordPaths.FromDisk); }
+#endif
         public string Stage => StageOf(ClientPath);
         public static string StageOf(string client) => client+".solostone-staging";
         // What a player can really do: setup refuses while an install record exists, so it is always uninstall first. Uninstall needs a readable install record.
@@ -439,8 +451,8 @@ namespace SoloStone
             object payload;
             map.TryGetValue("payload",out payload);
             if(payload!=null && !(payload is Dictionary<string,object>)) throw new InvalidOperationException("SoloStone installation record is invalid. No files were removed or launched.");
-            return new InstallRecord { Schema=PlainJson.Int(map,"schema"), InstallId=PlainJson.Str(map,"installId"), Root=PlainJson.Str(map,"root"), Source=PlainJson.Str(map,"source"),
-                ClientPath=PlainJson.Str(map,"clientPath"), ClientVersion=PlainJson.Str(map,"clientVersion"), ReleaseVersion=PlainJson.Str(map,"releaseVersion"),
+            return new InstallRecord { Schema=PlainJson.Int(map,"schema"), InstallId=PlainJson.Str(map,"installId"), Root=RecordPaths.Map(PlainJson.Str(map,"root"),RecordPaths.FromDisk),
+                Source=RecordPaths.Map(PlainJson.Str(map,"source"),RecordPaths.FromDisk), ClientPath=RecordPaths.Map(PlainJson.Str(map,"clientPath"),RecordPaths.FromDisk), ClientVersion=PlainJson.Str(map,"clientVersion"), ReleaseVersion=PlainJson.Str(map,"releaseVersion"),
                 Files=PlainJson.Strings(map,"files"), IdentityFiles=PlainJson.Strings(map,"identityFiles"), Payload=payload==null?null:Payload.FromMap((Dictionary<string,object>)payload) };
         }
         // The copy is self-contained, so the source folder is compared by spelling only. Setup and recovery check that it really exists.

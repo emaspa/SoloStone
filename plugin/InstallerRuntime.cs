@@ -50,8 +50,11 @@ internal static class InstallerRuntime
     // Majors must match tested-client.json (a launcher test proves it). Minor, patch and hashes are the launcher's policy.
     internal const int CompiledMajor=37;
     internal static string Resolve(string executable, string localData, string[] args, bool candidate, bool wine)
-        => Resolve(executable,localData,args,candidate,wine,WindowsInstallPaths.RegisteredFolders,
-            install=>FirewallRegistry.Verify(install,FirewallProtection.Executables(install)),RuntimeCosmeticVersion);
+        => Resolve(executable,localData,args,candidate,wine,WindowsInstallPaths.RegisteredFolders,Protection(wine),RuntimeCosmeticVersion);
+    // Windows: the copy's firewall rules. Linux (Wine): no Windows Firewall, so the network namespace the Linux script starts the game in.
+    internal static Action<InstallRecord> Protection(bool wine)
+        => wine ? (Action<InstallRecord>)(install=>NetworkIsolation.Verify())
+            : install=>FirewallRegistry.Verify(install,FirewallProtection.Executables(install));
 
     // A compile-time reference would inline the value from our reference DLLs, so this reads the running client's.
     private static string RuntimeCosmeticVersion() {
@@ -60,7 +63,8 @@ internal static class InstallerRuntime
         return (field.IsLiteral?field.GetRawConstantValue():field.GetValue(null)) as string;
     }
 
-    // Host queries are injectable so admission, including direct launches, can be tested without Windows COM.
+    // Host queries are injectable so admission, including direct launches, can be tested without Windows COM. Under Wine, firewall is the
+    // network isolation check (Protection); every other check is the same as on Windows.
     internal static string Resolve(string executable,string localData,string[] args,bool candidate,bool wine,
         Func<string[]> registered,Action<InstallRecord> firewall,Func<string> cosmeticVersion)
     {
@@ -70,7 +74,7 @@ internal static class InstallerRuntime
                 throw new InvalidOperationException("Invalid installer root selector.");
             return null;
         }
-        if(candidate || wine || OfflineGuard.LaunchLane(args)!=0 || index+1>=args.Length
+        if(candidate || OfflineGuard.LaunchLane(args)!=0 || index+1>=args.Length
             || args.Count(a=>a!=null && a.StartsWith("-hs-installer-root",StringComparison.OrdinalIgnoreCase))!=1)
             throw new InvalidOperationException("Installer launch selector rejected.");
         try { return Admit(executable,localData,args,index,registered,firewall,cosmeticVersion); }

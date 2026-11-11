@@ -204,8 +204,8 @@ markers, which include your Windows user name). Delete that folder by hand if yo
 - **Antivirus:** a loader file in the copy (`winhttp.dll`) can trigger false alarms in some antivirus programs.
   Do not switch your antivirus off. If it flags the file, check the installer as in "Optional: check your download" and
   report it to your antivirus vendor as a false positive. If you are not comfortable, do not install.
-- Windows only. Steam Deck and Linux are not supported yet. SoloStone's own menus are in English only; see "Game
-  language" for the game's text.
+- Steam Deck is not supported yet. For Linux, see [LINUX.md](LINUX.md). SoloStone's own menus are in English only; see
+  "Game language" for the game's text.
 
 Problems or questions: see [CONTRIBUTING.md](../.github/CONTRIBUTING.md). Logs in `%LOCALAPPDATA%\SoloStone\reports` can include
 your Windows user name and folder paths; remove those before you post a log.

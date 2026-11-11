@@ -217,13 +217,15 @@ public sealed class OfflineProbe : BaseUnityPlugin
             using (var socket = new TcpClient())
             {
                 var attempt = socket.BeginConnect(address, 443, null, null);
+                SocketError result = SocketError.TimedOut;
                 if (attempt.AsyncWaitHandle.WaitOne(1500))
                 {
-                    try { socket.EndConnect(attempt); } catch (SocketException) { }
+                    try { socket.EndConnect(attempt); result = SocketError.Success; } catch (SocketException e) { result = e.SocketErrorCode; }
                 }
-                if (socket.Connected)
+                // Under Wine (Linux) there is no firewall to block the copy: the launcher's network namespace has no route at all, and only that passes.
+                if (socket.Connected || (wine && result != SocketError.NetworkUnreachable))
                 {
-                    Logger.LogFatal("NETWORK CANARY CONNECTED " + address);
+                    Logger.LogFatal("NETWORK CANARY " + (socket.Connected ? "CONNECTED " : "NOT UNREACHABLE (" + result + ") ") + address);
                     Application.Quit(41);
                     return;
                 }

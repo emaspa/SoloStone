@@ -84,6 +84,30 @@ System.Reflection.Metadata 8.0.1
 Inno Setup 6.4.3 builds the installer. The installer contains Inno Setup's setup program, which its licence lets
 us distribute. https://jrsoftware.org/isinfo.php
 
+The Linux download (SoloStone-linux-<version>.tar.gz) has a launcher of its own (solostone) and ships these:
+
+.NET runtime 10.0
+  The Linux launcher is self-contained: the .NET runtime and its libraries are inside the solostone file, so
+  players need no .NET installed.
+  Licence: MIT.  Copyright (c) .NET Foundation and Contributors.  https://github.com/dotnet/runtime
+
+DXVK 3.1.1  (dxvk\d3d11.dll, dxvk\dxgi.dll)
+  Runs the game's Direct3D 11 graphics on Vulkan under Wine. The Linux launcher copies the two files into its own
+  Wine prefix. From dxvk-3.1.1.tar.gz, hash-checked against installer/linux-inputs.json.
+  Copyright (c) 2017 Philip Rebohle, (c) 2019 Joshua Ashton, (c) 2019 Robin Kertels, (c) 2023 Jeffrey Ellison.
+  Licence: zlib/libpng (LICENSES/Zlib.txt).  https://github.com/doitsujin/dxvk/blob/v3.1.1/LICENSE
+  Source and release: https://github.com/doitsujin/dxvk/releases/tag/v3.1.1
+
+LegacyRuntime font  (fonts\LegacyRuntime.ttf)
+  Gives the mod's on-screen labels their text under Wine. The Linux launcher copies it into its own Wine prefix.
+  It is Liberation Sans Regular 2.1.5 (LiberationSans-Regular.ttf from liberation-fonts-ttf-2.1.5.tar.gz, hash-checked
+  against installer/linux-inputs.json), modified: installer/package_linux.py renames the font LegacyRuntime and drops
+  the trademark line, as the licence requires of a modified version. The glyphs are unchanged.
+  Digitized data copyright (c) 2010 Google Corporation, with Reserved Font Arimo, Tinos and Cousine.
+  Copyright (c) 2012 Red Hat, Inc., with Reserved Font Name Liberation.
+  Licence: SIL Open Font License 1.1 (LICENSES/OFL-1.1.txt).  https://github.com/liberationfonts/liberation-fonts/blob/2.1.5/LICENSE
+  Source and release: https://github.com/liberationfonts/liberation-fonts/releases/tag/2.1.5
+
 The mod loader, Harmony and the Mono class libraries are added to your own copy of Hearthstone. The entries for
 them are in section 4.
 

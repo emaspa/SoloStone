@@ -348,7 +348,10 @@ static partial class Program
         Check(resolve(args,client)==root,"second Resolve in the same launch still passes (grant not consumed)");
         Refuses(()=>InstallerRuntime.Resolve(Path.Combine(source,"Hearthstone.exe"),data,args,false,false,()=>new string[0],_=>{},client),"plugin source exe refused");
         Refuses(()=>InstallerRuntime.Resolve(exe,data,args,true,false),"plugin candidate refused");
-        Refuses(()=>InstallerRuntime.Resolve(exe,data,args,false,true),"plugin wine refused");
+        // Under Wine (Linux) the plugin admits a launch only through the network isolation check, which stands where the firewall check does on Windows.
+        Check(InstallerRuntime.Resolve(exe,data,args,false,true,()=>new string[0],quiet,client)==root,"plugin admits a Wine launch that passes its protection check");
+        Check(new Func<int>(()=>{ try { InstallerRuntime.Resolve(exe,data,args,false,true,()=>new string[0],_=>throw new InvalidOperationException("network"),client); return 0; } catch(InstallerRefusal e) { return e.ExitCode; } })()==InstallerRuntime.ExitFirewallRefused,"a Wine launch that fails isolation is refused as a protection failure");
+        RejectsBecause(()=>InstallerRuntime.Protection(true)(installed),"could not read","the Wine protection is the isolation check, which refuses off Wine");
         Refuses(()=>resolve(args.Concat(new[]{"-hs-native-ui-lane","1"}).ToArray(),client),"plugin lane refused");
         Refuses(()=>resolve(args.Concat(new[]{"-hs-installer-root",root}).ToArray(),client),"plugin duplicate root refused");
         Check(InstallerRuntime.Resolve(exe,data,new string[0],false,false)==null,"plugin lab mode unchanged");

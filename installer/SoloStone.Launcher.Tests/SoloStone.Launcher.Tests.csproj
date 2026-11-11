@@ -40,6 +40,11 @@
     <Compile Include="../SoloStone.Launcher/UpdateEngine.cs" Link="UpdateEngine.cs" />
     <Compile Include="../SoloStone.Launcher/LaunchGate.cs" Link="LaunchGate.cs" />
     <Compile Include="../SoloStone.Launcher/ClientIdentity.cs" Link="ClientIdentity.cs" />
+    <!-- The Linux launcher's prefix and host (not its Main). -->
+    <Compile Include="../SoloStone.Linux/WinePrefix.cs" Link="Linux/WinePrefix.cs" />
+    <Compile Include="../SoloStone.Linux/LinuxHost.cs" Link="Linux/LinuxHost.cs" />
+    <Compile Include="../SoloStone.Linux/Desktop.cs" Link="Linux/Desktop.cs" />
+    <Compile Include="../SoloStone.Linux/LinuxMessages.cs" Link="Linux/LinuxMessages.cs" />
     <!-- Window logic without any WinForms: wording, wizard and launcher models, and the pure part of the live-test hooks. -->
     <Compile Include="../SoloStone.Launcher/Gui/Texts.cs" Link="Gui/Texts.cs" />
     <Compile Include="../SoloStone.Launcher/Gui/Messages.cs" Link="Gui/Messages.cs" />

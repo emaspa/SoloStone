@@ -49,6 +49,7 @@ static partial class Program
             FinalRoundRecovery(temp);
             FinalRoundHealth(temp);
             LastRoundTests(temp);
+            LinuxTests(temp);
             ElevationSourceRegressions();
             PreflightRegressions(temp);
             AppOnlyPreflight(temp);

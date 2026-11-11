@@ -1,0 +1,19 @@
+{
+ "schema": 1,
+ "dxvk": {
+  "version": "3.1.1",
+  "url": "https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-3.1.1.tar.gz",
+  "archiveSha256": "40565b4a724aadc4433fa4e010b4b23916d9b1f1baeee64e17186db94f54e608",
+  "files": ["x64/d3d11.dll", "x64/dxgi.dll"],
+  "licence": "Zlib",
+  "licenceUrl": "https://github.com/doitsujin/dxvk/blob/v3.1.1/LICENSE"
+ },
+ "font": {
+  "version": "2.1.5",
+  "url": "https://github.com/liberationfonts/liberation-fonts/files/7261482/liberation-fonts-ttf-2.1.5.tar.gz",
+  "archiveSha256": "7191c669bf38899f73a2094ed00f7b800553364f90e2637010a69c0e268f25d0",
+  "file": "liberation-fonts-ttf-2.1.5/LiberationSans-Regular.ttf",
+  "licence": "OFL-1.1",
+  "licenceUrl": "https://github.com/liberationfonts/liberation-fonts/blob/2.1.5/LICENSE"
+ }
+}
