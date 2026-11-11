@@ -176,12 +176,13 @@ These overlays show during a match:
 
 - **Deck Tracker** lists the cards still in your deck down the right edge of the screen, under the deck's name. It
   counts only cards you have seen leave or enter your deck, so a card shuffled in face down shows as "Unknown card".
-  Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. On by default.
+  Each row shows the card's art, cropped like the game's own deck list, unless **Card Art** is off. The last line says
+  how many cards are in your hand. On by default.
 - **Opponent Tracker** lists the opponent's cards you have seen down the left edge: cards from their deck that they
   played, summoned or discarded, or that were revealed some other way, with how many copies. Cards they created during
   the match and played come in a separate "Created" list. The line under their name gives their class and how many
-  cards are in their hand and deck. It shows only what the game showed you, so a Secret appears once it triggers and
-  nothing in their hand is listed. On by default.
+  cards are left in their deck, and the last line how many are in their hand. It shows only what the game showed you,
+  so a Secret appears once it triggers and nothing in their hand is listed. On by default.
 - **Attack Counter** shows how much damage each side's characters can still attack for this turn, or could on its
   next turn: left of your hero, under the opponent's portrait. Off by default.
 - **Countdown** shows the time left in your turn above the End Turn button. It runs only while the Turn Timer option
@@ -202,6 +203,8 @@ These overlays show during a match:
   the card's text, so an unusual wording may show nothing. On by default.
 
 The chips, the attack counter and the countdown share one style: a dark pill with a gold edge.
+
+Hover a card in either tracker to see the whole card beside the panel, at half the size of the game's enlarged card.
 
 The T key hides and shows all of them during a match. To turn one off, use **Tracker Options** in Options.
 `DeckTrackerKey` under `[Display]` in `BepInEx\config\solostone.plugin.cfg` changes the key.

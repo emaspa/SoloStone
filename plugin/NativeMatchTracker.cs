@@ -37,6 +37,8 @@ internal static class NativeMatchTracker
     private static string recordLine;
     // The attack counters: friendly and opposing, and where each hero is on screen (GUI coordinates, empty when unknown).
     private static int friendlyAttack = -1, opposingAttack = -1;
+    // Cards in the player's hand, for the line at the bottom of the deck tracker.
+    private static int friendlyHand;
     private static Rect friendlyHero, opposingHero;
     private static int heroesFrame = -100;
     // The opponent tracker: what the player has seen of the opponent's cards, and the panel's header.
@@ -47,12 +49,13 @@ internal static class NativeMatchTracker
     private static OwnDeckLedger ledger;
 #endif
 
-    internal static void Initialize(ManualLogSource logger) { log = logger; settings = MatchOverlay.Settings; NativeCardChips.Initialize(logger); NativeSecretHelper.Initialize(logger); NativeCardHistory.Initialize(logger); }
+    internal static void Initialize(ManualLogSource logger) { log = logger; settings = MatchOverlay.Settings; NativeCardChips.Initialize(logger); NativeSecretHelper.Initialize(logger); NativeCardHistory.Initialize(logger); NativeTrackerPreview.Initialize(logger); }
 
     // Called from OfflineProbe.Update, once per frame.
     internal static void Tick()
     {
         NativeCardHistory.Sweep();
+        NativeTrackerPreview.Sweep();
         if (failed || settings == null) return;
         try
         {
@@ -64,6 +67,7 @@ internal static class NativeMatchTracker
                 Forget(); tracked = match;
                 deckName = string.IsNullOrWhiteSpace(match.PlayerDeckName) ? "Deck" : match.PlayerDeckName.Trim();
                 view = DeckTrackerRows.Decklist(game.Player1.DeckCards.Select(c => c.Id).ToList(), Describe);
+                friendlyHand = game.Player1.HandZone?.Count ?? 0;
                 LoadStats(game.Player2?.Hero?.Card?.Class.ToString());
                 opponentName = string.IsNullOrWhiteSpace(match.OpponentName) ? "Opponent" : match.OpponentName.Trim();
                 opponentClass = DeckStatsText.ClassName(game.Player2?.Hero?.Card?.Class.ToString());
@@ -77,6 +81,7 @@ internal static class NativeMatchTracker
             if (history == observedHistory || !ClientBridge.BoardSettled()) return;
             bool friendlyTurn = game.CurrentPlayer == game.Player1;
             friendlyAttack = AttackCounter.For(game.Player1, friendlyTurn);
+            friendlyHand = game.Player1.HandZone?.Count ?? 0;
             opposingAttack = AttackCounter.For(game.Player2, !friendlyTurn);
             if (settings.DeckTracker)
             {
@@ -195,6 +200,7 @@ internal static class NativeMatchTracker
     {
         failed = true; view = null; friendlyAttack = opposingAttack = -1;
         try { CardArt.Clear(); } catch (Exception) { }
+        try { NativeTrackerPreview.Clear(); } catch (Exception) { }
         log?.LogWarning("MATCH_TRACKER disabled for the session: " + error);
     }
 
@@ -238,6 +244,7 @@ internal static class NativeMatchTracker
         try
         {
             if (settings.AttackCounter) { Counter(friendlyHero, friendlyAttack, false); Counter(opposingHero, opposingAttack, true); }
+            hoveredId = null;
             if (settings.OpponentTracker && !opponentFailed) DrawOpponent();
             if (settings.CardChips || settings.CounterChips) NativeCardChips.Draw();
             if (settings.CardHistory) NativeCardHistory.Draw();
@@ -247,7 +254,7 @@ internal static class NativeMatchTracker
             if (statsShown && settings.MulliganGuide) MulliganGuide();
             int height = Screen.height, width = Screen.width;
             int lines = view.Rows.Count + (view.Unknown > 0 ? 1 : 0);
-            float extra = (statsShown ? StatsLine : 0f) + (columns ? StatsLine * 2 : 0f) + (view.UnseenRemoved > 0 ? 1f : 0f);
+            float extra = (statsShown ? StatsLine : 0f) + (columns ? StatsLine * 2 : 0f) + (view.UnseenRemoved > 0 ? 1f : 0f) + 1f;
             float top = height * TopShare, available = height * BottomShare - top;
             // `line` sizes text and the header lines, `row` the card tiles; a long list shrinks the tiles first, then the text.
             float line = height * TextShare;
@@ -292,6 +299,7 @@ internal static class NativeMatchTracker
             foreach (var entry in view.Rows)
             {
                 Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary);
+                Hover(entry.Id, new Rect(x + pad, y, listWidth, row));
                 if (columns) Rates(columnsX, y, column, row, stats.For(entry.Id), entry.Count > 0);
                 y += row;
             }
@@ -302,8 +310,13 @@ internal static class NativeMatchTracker
                 y += line;
             }
             if (columns)
+            {
                 Text(new Rect(x + pad, y, inner, line * StatsLine), stats.TrackedGames == 0 ? "Win rates start with your next game"
                     : "Win rates over " + stats.TrackedGames + (stats.TrackedGames == 1 ? " game" : " games") + " (" + settings.StatsKey + " hides them)", small, Align.Left);
+                y += line * StatsLine;
+            }
+            Text(new Rect(x + pad, y, inner, line), InHand(friendlyHand), name, Align.Left);
+            Preview(new Rect(x, top, panelWidth, panelHeight), true);
         }
         catch (Exception error) { Fail(error); }
     }
@@ -320,7 +333,7 @@ internal static class NativeMatchTracker
         int height = Screen.height;
         bool created = seen.Created.Count > 0;
         int lines = Math.Max(1, seen.Deck.Count) + seen.Created.Count;
-        float extra = StatsLine + (created ? StatsLine : 0f);
+        float extra = StatsLine + (created ? StatsLine : 0f) + 1f;
         float top = height * TopShare, available = height * BottomShare - top;
         float line = height * TextShare;
         float row = Mathf.Min(height * RowShare, (available - line * (1.6f + extra)) / lines);
@@ -328,7 +341,7 @@ internal static class NativeMatchTracker
         if (row < height * TextShare * .75f) { row = available / (lines + 1.6f + extra); line = row; }
         Styles(Mathf.Max(8, Mathf.RoundToInt(line)));
         float pad = line * .35f;
-        string counts = (string.IsNullOrEmpty(opponentClass) ? "" : opponentClass + "  ·  ") + "Hand " + seen.Hand + "  ·  Deck " + seen.Remaining;
+        string counts = (string.IsNullOrEmpty(opponentClass) ? "" : opponentClass + "  ·  ") + "Deck " + seen.Remaining;
         if (!ReferenceEquals(measuredOpponent, seen) || measuredOpponentRow != styleRow)
         {
             float names = Measure("No cards seen yet", note).x;
@@ -347,11 +360,30 @@ internal static class NativeMatchTracker
         Text(new Rect(x + pad, y, listWidth, line * StatsLine), counts, small, Align.Left);
         y += line * StatsLine;
         if (seen.Deck.Count == 0) { Text(new Rect(x + pad, y, listWidth, row), "No cards seen yet", note, Align.Left); y += row; }
-        foreach (var entry in seen.Deck) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); y += row; }
-        if (!created) return;
-        Text(new Rect(x + pad, y, listWidth, line * StatsLine), "Created", small, Align.Left);
-        y += line * StatsLine;
-        foreach (var entry in seen.Created) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); y += row; }
+        foreach (var entry in seen.Deck) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); Hover(entry.Id, new Rect(x + pad, y, listWidth, row)); y += row; }
+        if (created)
+        {
+            Text(new Rect(x + pad, y, listWidth, line * StatsLine), "Created", small, Align.Left);
+            y += line * StatsLine;
+            foreach (var entry in seen.Created) { Row(x + pad, y, listWidth, row, entry.Id, entry.Cost.ToString(), entry.Name, entry.Count, entry.Legendary); Hover(entry.Id, new Rect(x + pad, y, listWidth, row)); y += row; }
+        }
+        Text(new Rect(x + pad, y, listWidth, line), InHand(seen.Hand), name, Align.Left);
+        Preview(new Rect(x, top, opponentWidth, panelHeight), false);
+    }
+
+    private static string InHand(int count) => count + (count == 1 ? " card in hand" : " cards in hand");
+
+    // The tile under the mouse in this frame's panels, shown full size beside its panel (NativeTrackerPreview).
+    private static string hoveredId;
+    private static Rect hoveredRow;
+    private static void Hover(string id, Rect area)
+    {
+        if (id != null && area.Contains(Event.current.mousePosition)) { hoveredId = id; hoveredRow = area; }
+    }
+    private static void Preview(Rect panelArea, bool rightPanel)
+    {
+        if (hoveredId == null || !panelArea.Contains(Event.current.mousePosition)) return;
+        NativeTrackerPreview.Show(hoveredId, hoveredRow, panelArea, rightPanel);
     }
 
     // A card's three win rates (opening hand, drawn, played), each shaded red to green around 50%.

@@ -182,7 +182,7 @@ internal static class NativeCardHistory
 
     // A card model as the game builds its big card's extra card: the full definition, the hand actor, no collider (so the mouse still
     // finds the real cards), drawn on the hovered card's layer.
-    private static GameObject Spawn(string cardId, int layer)
+    internal static GameObject Spawn(string cardId, int layer)
     {
         if (string.IsNullOrEmpty(cardId)) return null;
         var loader = NativeUIProbe.RewardAssetLoader;
